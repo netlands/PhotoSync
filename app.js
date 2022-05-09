@@ -9,6 +9,9 @@ const chokidar = require('chokidar');
 const { exec } = require("child_process");
 const fs = require('fs');
 
+//var sourceFolder = '.\\original\\';
+//var targetFolder = '.\\copy\\';
+//var extension = "jpg";
 
 // https://github.com/paulmillr/chokidar
 // https://github.com/gomfunkel/node-exif
@@ -18,6 +21,12 @@ const fs = require('fs');
 // https://socket.io/get-started/chat
 // https://expressjs.com/en/starter/static-files.html
 // https://syntaxfix.com/question/14577/black-transparent-overlay-on-image-hover-with-only-css
+
+let rawdata = fs.readFileSync('config.json');
+let config = JSON.parse(rawdata);
+let sourceFolder = config.source;
+let targetFolder = config.target;
+let extension = config.extension;
 
 app.use(express.static("."));
 
@@ -46,10 +55,6 @@ app.get('/', (req, res) => {
 	}	
 });*/
 
-var sourceFolder = '.\\original';
-var targetFolder = '.\\copy\\';
-var extension = "jpg";
-
 var watcher = chokidar.watch(sourceFolder, {
   ignored: /[\/\\]\./,
   persistent: true,
@@ -61,7 +66,7 @@ console.log("Watching " + sourceFolder + " for ." + extension + " files" );
 
 watcher
       .on('change',  function(path) { console.log(" ~ File " + path + " has been changed"); })
-      .on('add',  function(path) { console.log(" + File " + path + " has been added"); processFile(path); io.emit('new photo', path);})
+      .on('add',  function(path) { console.log(" + File " + path + " has been added"); processFile(path); })
 	  .on('unlink',  function(path) { console.log(" - File " + path + " has been deleted"); });
 	  // add, change, unlink, addDir, unlinkDir
 	  
@@ -79,6 +84,11 @@ function processFile(path) {
 	  console.log(path + ' was copied to destination');
 	});*/			
 	fs.copyFileSync(path, target);
+
+	var imageAsBase64 = "data:image/jpeg;base64, " + fs.readFileSync(target, 'base64');
+	// console.log(imageAsBase64);
+	io.emit('new photo', imageAsBase64);
+
 	var ExifImage = require('exif').ExifImage;
 
 	try {
@@ -87,7 +97,9 @@ function processFile(path) {
 				console.log('Error: '+error.message);
 			else
 				// console.log(exifData); // Do something with your data!
-				console.log("   SS " + fra_to_dec(exifData.exif.ExposureTime) + ", F " + exifData.exif.FNumber + ", ISO " + exifData.exif.ISO + ", flash " + flashFired(exifData.exif.Flash));
+				exif = "SS " + fra_to_dec(exifData.exif.ExposureTime) + ", F " + exifData.exif.FNumber + ", ISO " + exifData.exif.ISO + ", flash " + flashFired(exifData.exif.Flash);
+				io.emit('new data', exif);
+				console.log("   " + exif);
 		});
 	} catch (error) {
 		console.log('Error: ' + error.message);
