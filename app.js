@@ -20,6 +20,8 @@ const fs = require('fs');
 // https://stackoverflow.com/questions/23575218/convert-decimal-number-to-fraction-in-javascript-or-closest-fraction
 // https://socket.io/get-started/chat
 // https://expressjs.com/en/starter/static-files.html
+// https://stackoverflow.com/questions/32556463/overlay-grid-on-responsive-image
+
 // https://syntaxfix.com/question/14577/black-transparent-overlay-on-image-hover-with-only-css
 
 let rawdata = fs.readFileSync('config.json');
