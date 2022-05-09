@@ -21,6 +21,7 @@ const fs = require('fs');
 // https://socket.io/get-started/chat
 // https://expressjs.com/en/starter/static-files.html
 // https://stackoverflow.com/questions/32556463/overlay-grid-on-responsive-image
+// https://www.base64-image.de/
 
 // https://syntaxfix.com/question/14577/black-transparent-overlay-on-image-hover-with-only-css
 
@@ -48,7 +49,6 @@ app.get('/', (req, res) => {
 	});
   });
 
-
 /*chokidar.watch('.\\original').on('all', (event, path) => {
   console.log(event, path);
 
@@ -71,6 +71,7 @@ watcher
       .on('add',  function(path) { console.log(" + File " + path + " has been added"); processFile(path); })
 	  .on('unlink',  function(path) { console.log(" - File " + path + " has been deleted"); });
 	  // add, change, unlink, addDir, unlinkDir
+
 	  
 function processFile(path) {
 	if (getExtension(path).toLowerCase() == extension) {
@@ -121,6 +122,7 @@ function processFile(path) {
 }	
 }
 
+
 function flashFired(exifValue) {
 	//check if the number is even
 	if(exifValue % 2 == 0) {
@@ -132,6 +134,7 @@ function flashFired(exifValue) {
 		return("fired");
 	}	
 }	
+
 
 function fra_to_dec(num){
     var test=(String(num).split('.')[1] || []).length;
