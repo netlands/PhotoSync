@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
 
 const chokidar = require('chokidar');
 const { exec } = require("child_process");
@@ -13,17 +15,26 @@ const fs = require('fs');
 // https://stackabuse.com/executing-shell-commands-with-node-js/
 // https://stackoverflow.com/questions/7076958/read-exif-and-determine-if-the-flash-has-fired
 // https://stackoverflow.com/questions/23575218/convert-decimal-number-to-fraction-in-javascript-or-closest-fraction
+// https://socket.io/get-started/chat
+// https://expressjs.com/en/starter/static-files.html
+// https://syntaxfix.com/question/14577/black-transparent-overlay-on-image-hover-with-only-css
 
-// to-do: https://stackoverflow.com/questions/60115833/how-do-i-refresh-browser-from-server-side-with-node-js
-
+app.use(express.static("."));
 
 app.get('/', (req, res) => {
-	res.send('<h1>Hello world</h1>');
-	// res.sendFile(__dirname + '/index.html');
+	// res.send('<h1>Hello world</h1>');
+	res.sendFile(__dirname + '/index.html');
   });
   
   server.listen(3000, () => {
 	console.log('listening on *:3000');
+  });
+
+  io.on('connection', (socket) => {
+	console.log('page accessed');
+	socket.on('disconnect', () => {
+	  console.log('connection reset');
+	});
   });
 
 
@@ -50,7 +61,7 @@ console.log("Watching " + sourceFolder + " for ." + extension + " files" );
 
 watcher
       .on('change',  function(path) { console.log(" ~ File " + path + " has been changed"); })
-      .on('add',  function(path) { console.log(" + File " + path + " has been added"); processFile(path); })
+      .on('add',  function(path) { console.log(" + File " + path + " has been added"); processFile(path); io.emit('new photo', path);})
 	  .on('unlink',  function(path) { console.log(" - File " + path + " has been deleted"); });
 	  // add, change, unlink, addDir, unlinkDir
 	  
@@ -81,8 +92,8 @@ function processFile(path) {
 	} catch (error) {
 		console.log('Error: ' + error.message);
 	}	
-	exec("notepad.exe " + target, 1, (error, stdout, stderr) => {
-		/* if (error) {
+	/* exec("notepad.exe " + target, 1, (error, stdout, stderr) => {
+		if (error) {
 			console.log(`error: ${error.message}`);
 			return;
 		}
@@ -90,8 +101,8 @@ function processFile(path) {
 			console.log(`stderr: ${stderr}`);
 			return;
 		}
-		console.log(`stdout: ${stdout}`); */
-	});
+		console.log(`stdout: ${stdout}`); 
+	}); */
 	
 }	
 }
