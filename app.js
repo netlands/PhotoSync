@@ -1,6 +1,12 @@
+const express = require('express');
+const app = express();
+const http = require('http');
+const server = http.createServer(app);
+
 const chokidar = require('chokidar');
 const { exec } = require("child_process");
 const fs = require('fs');
+
 
 // https://github.com/paulmillr/chokidar
 // https://github.com/gomfunkel/node-exif
@@ -9,6 +15,16 @@ const fs = require('fs');
 // https://stackoverflow.com/questions/23575218/convert-decimal-number-to-fraction-in-javascript-or-closest-fraction
 
 // to-do: https://stackoverflow.com/questions/60115833/how-do-i-refresh-browser-from-server-side-with-node-js
+
+
+app.get('/', (req, res) => {
+	res.send('<h1>Hello world</h1>');
+	// res.sendFile(__dirname + '/index.html');
+  });
+  
+  server.listen(3000, () => {
+	console.log('listening on *:3000');
+  });
 
 
 /*chokidar.watch('.\\original').on('all', (event, path) => {
