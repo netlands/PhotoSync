@@ -42,6 +42,8 @@ if (fs.existsSync('config.local.json')) {
   }
 
 app.use(express.static("."));
+const favicon = require('express-favicon');
+app.use(favicon(__dirname + '/camera.ico'));
 
 app.get('/', (req, res) => {
 	// res.send('<h1>Hello world</h1>');
