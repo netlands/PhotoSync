@@ -32,6 +32,7 @@ let targetFolder = config.target;
 let extension = config.extension;
 
 if (fs.existsSync('config.local.json')) {
+	rawdata = fs.readFileSync('config.local.json');
 	config = JSON.parse(rawdata);
 	sourceFolder = config.source;
 	targetFolder = config.target;
