@@ -24,6 +24,7 @@ const fs = require('fs');
 // https://www.base64-image.de/
 
 // https://syntaxfix.com/question/14577/black-transparent-overlay-on-image-hover-with-only-css
+// https://codepen.io/michaelsboost/pen/DEQzoN
 
 let rawdata = fs.readFileSync('config.json');
 let config = JSON.parse(rawdata);
