@@ -12,6 +12,7 @@
  To start the application use the included batch file (edit the folder/file locations if needed).
  Or use the command line:  
  > npm start  
+ 
  The application will be accessible in your web browser.  
  > http://localhost:3000
  
