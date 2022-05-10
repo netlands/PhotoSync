@@ -65,7 +65,28 @@ app.get('/', (req, res) => {
 	socket.on('disconnect', () => {
 	  console.log('connection reset');
 	});
+  socket.on('delete target', (msg) => {
+	console.log('file: ' + targetFile);
+	fs.unlink(targetFile, (err) => {
+		if (err) {
+		  console.error(err)
+		  return
+		}
+		//file removed
+	  })
   });
+  socket.on('delete camera', (msg) => {
+    console.log('delete file: ' + sourceFile);
+	fs.unlink(sourceFile, (err) => {
+		if (err) {
+		  console.error(err)
+		  return
+		}
+		//file removed
+	  })
+  });
+});
+
 
 /*chokidar.watch('.\\original').on('all', (event, path) => {
   console.log(event, path);
@@ -84,6 +105,8 @@ var watcher = chokidar.watch(sourceFolder, {
 
 console.log("Watching " + sourceFolder + " for ." + extension + " files" );
 
+var sourceFile, targetFile;
+
 watcher
       .on('change',  function(path) { console.log(" ~ File " + path + " has been changed"); })
       .on('add',  function(path) { console.log(" + File " + path + " has been added"); processFile(path); })
@@ -92,14 +115,17 @@ watcher
 
 	  
 function processFile(path) {
+
+	sourceFile = path;
+
 	if (getExtension(path).toLowerCase() == extension) {
 
 
 	if (!(targetFolder.endsWith("\\"))) { targetfolder = targetFolder + "\\"}
 	var p = require('path');
 	var filename = p.parse(path).base;
-	var target = targetFolder + filename
-
+	var target = targetFolder + filename;
+	targetFile = target;
 
 	// File destination.txt will be created or overwritten by default.
 	/*fs.copyFile(path, target, (err) => {
@@ -111,6 +137,7 @@ function processFile(path) {
 	var imageAsBase64 = "data:image/jpeg;base64, " + fs.readFileSync(target, 'base64');
 	// console.log(imageAsBase64);
 	io.emit('new photo', imageAsBase64);
+	io.emit('filename', filename);
 
 	var ExifImage = require('exif').ExifImage;
 
