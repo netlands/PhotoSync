@@ -8,6 +8,7 @@
  > npm install
  ## Configuration
  Configure folder locations in the **config.json** file.
+ If you use git to pull updates rename config.json to **config.local.json** to keep local defaults between updates.
  ## Start
  To start the application use the included batch file (edit the folder/file locations if needed).
  Or use the command line:  
