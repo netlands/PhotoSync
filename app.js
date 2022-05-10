@@ -41,6 +41,11 @@ if (fs.existsSync('config.local.json')) {
 	// no local config
   }
 
+// Read command line argument
+if (process.argv.length >= 3) {
+    sourceFolder = process.argv[2];
+}
+
 app.use(express.static("."));
 const favicon = require('express-favicon');
 app.use(favicon(__dirname + '/camera.ico'));
@@ -88,6 +93,8 @@ watcher
 function processFile(path) {
 	if (getExtension(path).toLowerCase() == extension) {
 
+
+	if (!(targetFolder.endsWith("\\"))) { targetfolder = targetFolder + "\\"}
 	var p = require('path');
 	var filename = p.parse(path).base;
 	var target = targetFolder + filename
