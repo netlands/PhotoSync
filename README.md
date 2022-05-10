@@ -7,7 +7,7 @@
  ## Installation
  > npm install
  ## Configuration
- Configure folder locations in the *config.json* file.
+ Configure folder locations in the **config.json** file.
  ## Start
  To start the application use the included batch file (edit the folder/file locations if needed).
  Or use the command line:  
