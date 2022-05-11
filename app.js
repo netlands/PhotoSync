@@ -42,9 +42,16 @@ if (fs.existsSync('config.local.json')) {
 	// no local config
   }
 
+const inspector = require('inspector');
+// function isInDebugMode() { return inspector.url() !== undefined; }
+
 // Read command line argument
-if (process.argv.length >= 3) {
-    sourceFolder = process.argv[2];
+if (inspector.url() !== undefined) {
+	console.log("DEBUG MODE");
+} else {
+	if (process.argv.length >= 3) {
+		sourceFolder = process.argv[2];
+	}
 }
 
 app.use(express.static("."));
@@ -66,23 +73,21 @@ app.get('/', (req, res) => {
 	  console.log('connection reset');
 	});
   socket.on('delete target', (msg) => {
-	console.log('file: ' + targetFile);
 	fs.unlink(targetFile, (err) => {
 		if (err) {
 		  console.error(err)
 		  return
 		}
-		//file removed
+		console.log('deleted file: ' + targetFile);
 	  })
   });
   socket.on('delete camera', (msg) => {
-    console.log('delete file: ' + sourceFile);
 	fs.unlink(sourceFile, (err) => {
 		if (err) {
 		  console.error(err)
 		  return
 		}
-		//file removed
+		console.log('deleted file: ' + sourceFile);
 	  })
   });
 });

@@ -5,7 +5,8 @@
     <title>Simple Photo Sync</title>
 </head>
 <meta charset='utf-8'>
-<link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+<!-- https://fonts.google.com/icons?selected=Material+Icons&icon.set=Material+Icons -->
 <script type='text/javascript' src='https://code.jquery.com/jquery-1.9.1.min.js'></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -82,6 +83,7 @@ divDelete.addEventListener("click",
         margin: 0;
         padding: 0;
         overflow: hidden;
+        font-family: Calibri, sans-serif;
     }
 
     img {
@@ -192,7 +194,7 @@ divDelete.addEventListener("click",
 #context-menu {
   position:fixed;
   z-index:10000;
-  width:150px;
+  width:180px;
   background: #999999;
   border-radius:5px;
   transform:scale(0);
@@ -204,7 +206,8 @@ divDelete.addEventListener("click",
 }
 #context-menu .item {
   padding:8px 10px;
-  font-size:15px;
+  font-size:18px;
+  font-family: Calibri, sans-serif;
   color:#eee;
   cursor: pointer;
 }
@@ -226,6 +229,13 @@ divDelete.addEventListener("click",
 .show-menu-item {
   display: default;
 }
+
+.material-icons {
+    display:inline-flex;
+    vertical-align:top;
+    margin-right: 4px;
+}
+
 </style>
 <script>
 function eyeDropper() {
@@ -262,14 +272,29 @@ function hideMenu() {
 </script>
 <body>
 <div id="context-menu">
+  <div class="item">
+    <span class="material-icons">grid_off</span> Hide Grid
+  </div>
+  <div class="item">
+    <span class="material-icons">description</span> Filename
+  </div>
+  <div class="item">
+    <span class="material-icons">photo_camera</span> Source Folder
+  </div>
+  <div class="item">
+    <span class="material-icons">desktop_windows</span> Target Folder
+  </div>
   <div class="item" onclick="deleteFromTarget();">
-    <i class="fas fa-image"></i> Delete Target
+    <span class="material-icons">image</span> Delete Copy
   </div>
   <!--div class="item" onclick="eyeDropper();">
-    <i class="fas fa-eye-dropper"></i> Eye Dropper
+     Eye Dropper
   </div-->
   <div class="item" id="delete_original" title="Ctrl-click to delete">
-    <i class="fas fa-camera"></i> Delete Original
+    <span class="material-icons">sd_card</span> Delete Original
+  </div>
+  <div class="item">
+    <span class="material-icons">camera_roll</span> <span class="material-icons">camera</span> <span class="material-icons">flash_on</span> <span class="material-icons">shutter_speed</span>
   </div>
 </div>
     <div id="crosshair-h" class="hair"></div>
