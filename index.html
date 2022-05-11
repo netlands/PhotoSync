@@ -9,6 +9,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <script>
     var socket = io();
+
     var messages = document.getElementById('messages');
     socket.on('new photo', function (msg) {
       // console.log(msg);
@@ -16,15 +17,19 @@
     });
     socket.on('new data', function (msg) {
       console.log(msg);
-      // document.getElementById("photo").title = msg;
-      $('#mousepos').text(msg);
+      document.getElementById("photo").title = msg.filename;
+      $('#mousepos').text("SS " + msg.SS + ", F " + msg.F + ", ISO " + msg.ISO + ", flash " + msg.flash);
       $('#mousepos').show();
+      document.getElementById("container").setAttribute('data-content', msg.filename);
+      document.getElementById("filename").innerText = msg.filename;
+      document.getElementById("source").innerText = msg.source.substring(0, msg.source.lastIndexOf("\\"));
+      document.getElementById("target").innerText = msg.target.substring(0, msg.target.lastIndexOf("\\"));
+      document.getElementById("ISO").innerText = msg.ISO;
+      document.getElementById("F").innerText = msg.F;
+      document.getElementById("SS").innerText = msg.SS;
+      if (msg.flash.includes("not")) { document.getElementById("flash").innerText = "flash_off"; 
+      } else { document.getElementById("flash").innerText = "flash_on"; }
     });
-    socket.on('filename', function (msg) {
-      console.log(msg);
-      document.getElementById("container").setAttribute('data-content', msg);
-    });
-  
   
     function deleteFromTarget() {
       socket.emit('delete target', document.getElementById("container").getAttribute('data-content'));
@@ -34,6 +39,15 @@
       socket.emit('delete camera', document.getElementById("container").getAttribute('data-content'));
     }
   
+    function toggleGrid() {
+      $("#grid").toggleClass("inactive");
+      const div = document.querySelector('#grid');
+      if (div.classList.contains("inactive")) {
+        document.getElementById("grid_toggle").innerText = "grid_on";
+      } else {
+        document.getElementById("grid_toggle").innerText = "grid_off";
+      }
+    }
   
     $(document).ready(function () {
       // Setup our variables
@@ -136,6 +150,12 @@
       background: linear-gradient(to right, rgba(0, 0, 0, 0) 1px, transparent 1px);
     }
   
+    .grid.inactive::before,
+    .grid.inactive::after {
+    box-shadow: inset 0px 0px 0 1px rgba(0, 0, 0, 0.5) !important;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0) 1px, transparent 1px) !important;
+}
+
     .grid::after {
       transform: rotate(90deg);
     }
@@ -275,17 +295,17 @@
 
 <body>
   <div id="context-menu">
-    <div class="item">
-      <span class="material-icons">grid_off</span> Hide Grid
+    <div class="item" onclick="toggleGrid();">
+      <span id="grid_toggle" class="material-icons">grid_off</span> Grid on/off
     </div>
     <div class="item">
-      <span class="material-icons">description</span> Filename
+      <span class="material-icons">description</span> <span id="filename">Filename</span>
     </div>
     <div class="item">
-      <span class="material-icons">photo_camera</span> Source Folder
+      <span class="material-icons">photo_camera</span> <span id="source">Source Folder</span>
     </div>
     <div class="item">
-      <span class="material-icons">desktop_windows</span> Target Folder
+      <span class="material-icons">desktop_windows</span> <span id="target">Target Folder</span>
     </div>
     <div class="item" onclick="deleteFromTarget();">
       <span class="material-icons">image</span> Delete Copy
@@ -297,8 +317,10 @@
       <span class="material-icons">sd_card</span> Delete Original
     </div>
     <div class="item">
-      <span class="material-icons">camera_roll</span> <span class="material-icons">camera</span> <span
-        class="material-icons">flash_on</span> <span class="material-icons">shutter_speed</span>
+      <span class="material-icons">camera</span> <span id="F"></span> 
+      <span class="material-icons">shutter_speed</span> <span id="SS"></span> <br />
+      <span class="material-icons">camera_roll</span> <span id="ISO"></span> 
+      <span id="flash" class="material-icons">flash_on</span> 
     </div>
   </div>
   <div id="crosshair-h" class="hair"></div>

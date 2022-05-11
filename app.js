@@ -88,7 +88,7 @@ app.get('/', (req, res) => {
 		  return
 		}
 		console.log('deleted file: ' + sourceFile);
-	  })
+	  }) 
   });
 });
 
@@ -142,23 +142,41 @@ function processFile(path) {
 	var imageAsBase64 = "data:image/jpeg;base64, " + fs.readFileSync(target, 'base64');
 	// console.log(imageAsBase64);
 	io.emit('new photo', imageAsBase64);
-	io.emit('filename', filename);
 
 	var ExifImage = require('exif').ExifImage;
+	var exif = {};
+	exif.filename = filename;
+	exif.source = sourceFile;
+	exif.target = targetFile;
 
 	try {
 		new ExifImage({ image : target }, function (error, exifData) {
-			if (error)
+			if (error) {
 				console.log('Error: '+error.message);
-			else
+				exif.SS = "";
+				exif.F = "";
+				exif.ISO = "";
+				exif.flash = "";
+				io.emit('new data', exif);				
+			} else {
 				// console.log(exifData); // Do something with your data!
-				exif = "SS " + fra_to_dec(exifData.exif.ExposureTime) + ", F " + exifData.exif.FNumber + ", ISO " + exifData.exif.ISO + ", flash " + flashFired(exifData.exif.Flash);
+				exif.SS = fra_to_dec(exifData.exif.ExposureTime);
+				exif.F = exifData.exif.FNumber;
+				exif.ISO = exifData.exif.ISO;
+				exif.flash = flashFired(exifData.exif.Flash);
 				io.emit('new data', exif);
-				console.log("   " + exif);
+			}
 		});
 	} catch (error) {
 		console.log('Error: ' + error.message);
+			exif.SS = "";
+			exif.F = "";
+			exif.ISO = "";
+			exif.flash = "";
+			io.emit('new data', exif);
 	}	
+
+
 	/* exec("notepad.exe " + target, 1, (error, stdout, stderr) => {
 		if (error) {
 			console.log(`error: ${error.message}`);
