@@ -19,7 +19,7 @@ In order to access pictures on a camera's memory card, the camera needs to be co
 
 ## Installation
 
-> npm install
+    npm install
 
 For the application to work the camera's memory needs to be "mounted" as a drive (USB Mass Storage mode), or you will need to map a drive letter to the camera "MTP device".
 
@@ -39,10 +39,10 @@ The config file alows you to set some defaults.
 
 Open a terminal windows or command line:
 
-> node app
+    node app
 
 The application will be accessible in your web browser.
-
-> http://localhost:3000
+ 
+    http://localhost:3000
  
 To streamline the startup process, use your browser to create an app from the webpage, and create a batch file to start the server and the app. Optionally start the batch file when the camera connects to the PC.
