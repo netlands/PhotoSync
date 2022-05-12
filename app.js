@@ -96,7 +96,29 @@ app.get('/', (req, res) => {
   socket.on('copy source', (msg) => {
 	fs.copyFileSync(msg, targetFile);
 	console.log('Manually copied ' + msg);
-  });  
+  });
+  socket.on('sort', (msg) => {
+	var path = require('path');
+	switch (msg) {
+		case "keep" :
+			console.log("sort action: " + msg);
+			break;
+		case "discard" :
+			console.log("sort action: " + msg);
+			break;
+		case "star" :
+			console.log("sort action: " + msg);
+			break;			
+		default :		
+	}
+	
+	if (!(fs.existsSync(path.join(targetFolder, msg)))) {
+		fs.mkdirSync(path.join(targetFolder, msg));
+	}	
+	fs.renameSync(targetFile, path.join(targetFolder, msg, filename))
+		
+  }); 
+  
 });
 
 
@@ -118,7 +140,7 @@ var watcher = chokidar.watch(sourceFolder, {
 console.log("Watching " + sourceFolder + " for ." + extension + " files" );
 console.log("autocopy: " + autoCopy );
 
-var sourceFile, targetFile;
+var sourceFile, targetFile, filename;
 
 watcher
       .on('change',  function(path) { console.log(" ~ File " + path + " has been changed"); })
@@ -136,7 +158,7 @@ function processFile(path) {
 
 	if (!(targetFolder.endsWith("\\"))) { targetfolder = targetFolder + "\\"}
 	var p = require('path');
-	var filename = p.parse(path).base;
+	filename = p.parse(path).base;
 	var target = targetFolder + filename;
 	targetFile = target;
 
