@@ -1,5 +1,6 @@
 { 
-    "source": ".\\original",
+    "source": ".\\original\\",
     "target": ".\\copy\\",
-    "extension": "jpg"
+    "extension": "jpg",
+    "autocopy": true
 }

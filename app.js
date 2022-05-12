@@ -12,6 +12,7 @@ const fs = require('fs');
 //var sourceFolder = '.\\original\\';
 //var targetFolder = '.\\copy\\';
 //var extension = "jpg";
+//var autocopy = true;
 
 // https://github.com/paulmillr/chokidar
 // https://github.com/gomfunkel/node-exif
@@ -31,6 +32,7 @@ let config = JSON.parse(rawdata);
 let sourceFolder = config.source;
 let targetFolder = config.target;
 let extension = config.extension;
+let autoCopy = config.autocopy;
 
 if (fs.existsSync('config.local.json')) {
 	rawdata = fs.readFileSync('config.local.json');
@@ -38,6 +40,7 @@ if (fs.existsSync('config.local.json')) {
 	sourceFolder = config.source;
 	targetFolder = config.target;
 	extension = config.extension;
+	autoCopy = config.autocopy;
   } else {
 	// no local config
   }
@@ -90,6 +93,10 @@ app.get('/', (req, res) => {
 		console.log('deleted file: ' + sourceFile);
 	  }) 
   });
+  socket.on('copy source', (msg) => {
+	fs.copyFileSync(msg, targetFile);
+	console.log('Manually copied ' + msg);
+  });  
 });
 
 
@@ -109,6 +116,7 @@ var watcher = chokidar.watch(sourceFolder, {
 });    
 
 console.log("Watching " + sourceFolder + " for ." + extension + " files" );
+console.log("autocopy: " + autoCopy );
 
 var sourceFile, targetFile;
 
@@ -136,10 +144,17 @@ function processFile(path) {
 	/*fs.copyFile(path, target, (err) => {
 	  if (err) throw err;
 	  console.log(path + ' was copied to destination');
-	});*/			
-	fs.copyFileSync(path, target);
+	});*/
+	
+	var imageAsBase64 			
+	
+	if (autoCopy) { 
+		fs.copyFileSync(path, target); 		
+	} else {
+		target = path;	
+	}
 
-	var imageAsBase64 = "data:image/jpeg;base64, " + fs.readFileSync(target, 'base64');
+	imageAsBase64 = "data:image/jpeg;base64, " + fs.readFileSync(target, 'base64');
 	// console.log(imageAsBase64);
 	io.emit('new photo', imageAsBase64);
 
@@ -148,6 +163,7 @@ function processFile(path) {
 	exif.filename = filename;
 	exif.source = sourceFile;
 	exif.target = targetFile;
+	exif.autocopy = autoCopy;
 
 	try {
 		new ExifImage({ image : target }, function (error, exifData) {
@@ -156,13 +172,15 @@ function processFile(path) {
 				exif.SS = "";
 				exif.F = "";
 				exif.ISO = "";
+				exif.EV = "";
 				exif.flash = "";
 				io.emit('new data', exif);				
 			} else {
-				// console.log(exifData); // Do something with your data!
+				console.log(exifData); // Do something with your data!
 				exif.SS = fra_to_dec(exifData.exif.ExposureTime);
 				exif.F = exifData.exif.FNumber;
 				exif.ISO = exifData.exif.ISO;
+				exif.EV = exifData.exif.ExposureCompensation;
 				exif.flash = flashFired(exifData.exif.Flash);
 				io.emit('new data', exif);
 			}
@@ -172,6 +190,7 @@ function processFile(path) {
 			exif.SS = "";
 			exif.F = "";
 			exif.ISO = "";
+			exif.EV = "";
 			exif.flash = "";
 			io.emit('new data', exif);
 	}	
@@ -206,7 +225,8 @@ function flashFired(exifValue) {
 }	
 
 
-function fra_to_dec(num){
+function fra_to_dec(value){
+	num = value;
     var test=(String(num).split('.')[1] || []).length;
     var num=(num*(10**Number(test)))
     var den=(10**Number(test))
@@ -217,7 +237,12 @@ function fra_to_dec(num){
         gcd = gcd(numerator,denominator);
         return [numerator/gcd, denominator/gcd];
     }
-    return (reduce(num,den)[0]+"/"+reduce(num,den)[1])
+	if (reduce(num,den)[0] == "1") {
+		return (reduce(num,den)[0]+"/"+reduce(num,den)[1])
+	} else {
+		return(Math.round(value * 1000) / 1000)
+	}
+    
 }
 
 

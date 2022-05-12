@@ -13,6 +13,8 @@
   <script>
     var socket = io();
 
+    var sourceFile, targetFile;
+
     var messages = document.getElementById('messages');
     socket.on('new photo', function (msg) {
       // console.log(msg);
@@ -21,15 +23,26 @@
     socket.on('new data', function (msg) {
       console.log(msg);
       document.getElementById("photo").title = msg.filename;
-      $('#mousepos').text("SS " + msg.SS + ", F " + msg.F + ", ISO " + msg.ISO + ", flash " + msg.flash);
+      $('#mousepos').text("SS " + msg.SS + ", F " + msg.F + ", ISO " + msg.ISO + ", " + msg.EV + " EV, flash " + msg
+        .flash);
       $('#mousepos').show();
+      sourceFile = msg.source;
+      targetFile = msg.target;
       document.getElementById("container").setAttribute('data-content', msg.filename);
-      document.getElementById("filename").innerText = msg.filename;
-      document.getElementById("source").innerText = msg.source.substring(0, msg.source.lastIndexOf("\\"));
-      document.getElementById("target").innerText = msg.target.substring(0, msg.target.lastIndexOf("\\"));
+      document.getElementById("filename").innerText = shorten(msg.filename, 20);
+      document.getElementById("source").innerText = shorten(msg.source.substring(0, msg.source.lastIndexOf("\\")),
+        20);
+      document.getElementById("target").innerText = shorten(msg.target.substring(0, msg.target.lastIndexOf("\\")),
+        20);
       document.getElementById("ISO").innerText = msg.ISO;
       document.getElementById("F").innerText = msg.F;
       document.getElementById("SS").innerText = msg.SS;
+      document.getElementById("EV").innerText = msg.EV;
+      if (msg.autocopy) {
+        $('.copy-file').addClass("hide-menu-item");
+      } else {
+        $('.delete-copy').addClass("hide-menu-item");
+      }
       if (msg.flash.includes("not")) {
         document.getElementById("flash").innerText = "flash_off";
       } else {
@@ -38,9 +51,9 @@
       if (msg.ISO == "") {
         $('#exif').addClass("hide-menu-item")
       } else {
-        $('#exif').removeClass("hide-menu-item")   
+        $('#exif').removeClass("hide-menu-item")
       }
-    
+
     });
 
     function deleteFromTarget() {
@@ -48,12 +61,16 @@
     }
 
     function deleteFromCamera() {
-      let confirmAction = confirm("WARNING! Are you sure you want to delete the original photo? This action cannot be undone.");
-        if (confirmAction) {
-          // alert("Source file deleted");
-          socket.emit('delete camera', document.getElementById("container").getAttribute('data-content'));
-        } else {
-        }
+      let confirmAction = confirm(
+        "WARNING! Are you sure you want to delete the original photo? This action cannot be undone.");
+      if (confirmAction) {
+        // alert("Source file deleted");
+        socket.emit('delete camera', document.getElementById("container").getAttribute('data-content'));
+      } else {}
+    }
+
+    function copyFile() {
+      socket.emit('copy source', sourceFile);
     }
 
     function toggleGrid() {
@@ -189,8 +206,7 @@
     }
 
     .container:hover:after {
-      content: attr(data-content);
-
+      /* check how to position inside frame content: attr(data-content); */
     }
 
     #crosshair-h {
@@ -232,7 +248,7 @@
     #context-menu {
       position: fixed;
       z-index: 10000;
-      width: 180px;
+      width: 220px;
       background: #999999;
       border-radius: 5px;
       transform: scale(0);
@@ -291,10 +307,10 @@
       font-size: 16px;
       padding-bottom: 8px;
     }
-    
+
     .item#exif .material-icons {
       font-size: 20px;
-    }  
+    }
   </style>
   <script>
     function eyeDropper() {
@@ -309,20 +325,7 @@
 
 
 
-    window.addEventListener("contextmenu", function (event) {
 
-      event.preventDefault();
-
-      var contextElement = document.getElementById("context-menu");
-
-      contextElement.addEventListener("click", hideMenu);
-      contextElement.addEventListener("mouseleave", hideMenu);
-
-      contextElement.style.top = (event.clientY - 4) + "px";
-      contextElement.style.left = (event.clientX - 4) + "px";
-      contextElement.classList.add("active");
-
-    });
 
     function hideMenu() {
       document.getElementById("context-menu").classList.remove("active");
@@ -345,7 +348,9 @@
           disableZoom: false,
           cursor: "zoom-in"
         })
-        magnifier.zoom(2, { animate: true })
+        magnifier.zoom(1.25, {
+          animate: true
+        })
         document.getElementById("zoom_toggle").innerText = "zoom_out";
       } else {
         magnifier.setOptions({
@@ -365,6 +370,23 @@
     }
 
     window.addEventListener('load', function () {
+
+      document.getElementById("container").addEventListener("contextmenu", function (event) {
+
+event.preventDefault();
+
+var contextElement = document.getElementById("context-menu");
+
+contextElement.addEventListener("click", hideMenu);
+contextElement.addEventListener("mouseleave", hideMenu);
+
+contextElement.style.top = (event.clientY - 4) + "px";
+contextElement.style.left = (event.clientX - 4) + "px";
+contextElement.classList.add("active");
+
+});
+
+
       const element = document.getElementById('grid')
       magnifier = Panzoom(element, {
         disablePan: true,
@@ -385,6 +407,13 @@
       };
 
     });
+
+    function shorten(text, textLength) {
+      if (text.length > textLength) {
+        text = text.substring(0, textLength) + '...';
+      }
+      return text;
+    }
   </script>
   <style>
 
@@ -394,6 +423,17 @@
 
 <body>
   <div id="context-menu">
+    <div class="item copy-file" onclick="copyFile();">
+      <span class="material-icons">file_copy</span> Copy Photo
+    </div>
+    <hr class="copy-file" />
+    <div class="item delete-copy" onclick="deleteFromTarget();">
+      <span class="material-icons">image</span> Delete Copy
+    </div>
+    <div class="item warning" id="delete_original" title="Ctrl-click to delete">
+      <span class="material-icons">sd_card</span> Delete Original
+    </div>
+    <hr />
     <div class="item" onclick="toggleGrid();">
       <span id="grid_toggle" class="material-icons">grid_off</span> Grid on/off
     </div>
@@ -403,27 +443,23 @@
     <!--div class="item" onclick="eyeDropper();">
      Eye Dropper
     </div-->
-    <div class="item clip" data-clipboard-target="#filename" title="Click to copy">
+    <hr />
+    <div class="item clip" data-clipboard-target="#filename" title="Click to copy filename">
       <span class="material-icons">description</span> <span id="filename">Filename</span>
     </div>
-    <div class="item clip" data-clipboard-target="#source" title="Click to copy">
+    <div class="item clip" data-clipboard-target="#source" title="Click to copy source folder">
       <span class="material-icons">photo_camera</span> <span id="source">Source Folder</span>
     </div>
-    <div class="item clip" data-clipboard-target="#target" title="Click to copy">
+    <div class="item clip" data-clipboard-target="#target" title="Click to copy target folder">
       <span class="material-icons">desktop_windows</span> <span id="target">Target Folder</span>
-    </div>
-    <div class="item" onclick="deleteFromTarget();">
-      <span class="material-icons">image</span> Delete Copy
-    </div>
-    <div class="item warning" id="delete_original" title="Ctrl-click to delete">
-      <span class="material-icons">sd_card</span> Delete Original
     </div>
     <hr />
     <div class="item hide-menu-item" id="exif">
-      <div><span class="material-icons">camera</span> F <span id="F"></span>
-      <span class="material-icons">shutter_speed</span> SS <span id="SS"></span></div>
-      <div><span class="material-icons">camera_roll</span> ISO <span id="ISO"></span>
-      <span id="flash" class="material-icons">flash_on</span></div>
+      <div><span class="material-icons">camera</span>F <span id="F"></span>
+        <span class="material-icons">shutter_speed</span>SS <span id="SS"></span></div>
+      <div><span class="material-icons">camera_roll</span>ISO <span id="ISO"></span>
+        <span class="material-icons">iso</span><span id="EV"></span> EV
+        <span id="flash" class="material-icons">flash_on</span></div>
     </div>
   </div>
   <div id="crosshair-h" class="hair"></div>
