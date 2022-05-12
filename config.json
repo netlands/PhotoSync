@@ -1,6 +1,10 @@
-{ 
-    "source": ".\\original\\",
-    "target": ".\\copy\\",
-    "extension": "jpg",
-    "autocopy": true
+{
+  "source": ".\\original\\",
+  "target": ".\\copy\\",
+  "extension": "jpg",
+  "settings": {
+    "autocopy": true,
+    "showgrid": true,
+    "quicksort": false
+  }
 }

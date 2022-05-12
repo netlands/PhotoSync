@@ -32,7 +32,10 @@ let config = JSON.parse(rawdata);
 let sourceFolder = config.source;
 let targetFolder = config.target;
 let extension = config.extension;
-let autoCopy = config.autocopy;
+let autoCopy = config.settings.autocopy;
+let showGrid = config.settings.showgrid;
+let quickSort = config.settings.quicksort;
+
 
 if (fs.existsSync('config.local.json')) {
 	rawdata = fs.readFileSync('config.local.json');
@@ -40,7 +43,9 @@ if (fs.existsSync('config.local.json')) {
 	sourceFolder = config.source;
 	targetFolder = config.target;
 	extension = config.extension;
-	autoCopy = config.autocopy;
+	autoCopy = config.settings.autocopy;
+	showGrid = config.settings.showgrid;
+	quickSort = config.settings.quicksort;	
   } else {
 	// no local config
   }
@@ -75,6 +80,11 @@ app.get('/', (req, res) => {
 	socket.on('disconnect', () => {
 	  console.log('connection reset');
 	});
+
+	socket.on('getconfig', (msg) => {
+		io.emit('config', config);
+	});
+
   socket.on('delete target', (msg) => {
 	fs.unlink(targetFile, (err) => {
 		if (err) {

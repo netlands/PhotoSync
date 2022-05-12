@@ -15,6 +15,8 @@
 
     var sourceFile, targetFile;
 
+    var maxItemLen = 20;
+
     var messages = document.getElementById('messages');
     socket.on('new photo', function (msg) {
       // console.log(msg);
@@ -31,34 +33,32 @@
       sourceFile = msg.source;
       targetFile = msg.target;
       document.getElementById("container").setAttribute('data-content', msg.filename);
-      document.getElementById("filename").innerText = shorten(msg.filename, 20);
+      document.getElementById("filename").innerText = shorten(msg.filename, maxItemLen);
       document.getElementById("source").innerText = shorten(msg.source.substring(0, msg.source.lastIndexOf("\\")),
-        20);
+        maxItemLen);
       document.getElementById("target").innerText = shorten(msg.target.substring(0, msg.target.lastIndexOf("\\")),
-        20);
+        maxItemLen);
       document.getElementById("ISO").innerText = msg.ISO;
       document.getElementById("F").innerText = msg.F;
       document.getElementById("SS").innerText = msg.SS;
       document.getElementById("EV").innerText = msg.EV;
-      $('#star').show();
-      $('#discard').show();
-      $('#keep').show();
-      if (msg.autocopy) {
-        $('.copy-file').addClass("hide-menu-item");
-      } else {
-        $('.delete-copy').addClass("hide-menu-item");
-        $('.quick-sort').addClass("hide-menu-item");
-      }
       if (msg.flash.includes("not")) {
         document.getElementById("flash").innerText = "flash_off";
       } else {
         document.getElementById("flash").innerText = "flash_on";
       }
+
       if (msg.ISO == "") {
         $('#exif').addClass("hide-menu-item")
       } else {
         $('#exif').removeClass("hide-menu-item")
       }
+
+      // reset quicksort for each file
+      $('#star').show();
+      $('#discard').show();
+      $('#keep').show();
+
 
     });
 
@@ -115,7 +115,58 @@
       $(".delete-copy").toggleClass("hide-menu-item");
     }
 
+    var targetfolder, sourcefolder, extenstion, autocopy, quicksort, showgrid
+
+    socket.on('config', function (msg) {
+      console.log(msg);
+      let config = msg;
+      targetfolder = config.target;
+      sourcefolder = config.source;
+      extenstion = config.extension;
+      autocopy = config.settings.autocopy;
+      showgrid = config.settings.showgrid;
+      quicksort = config.settings.quicksort;
+      document.getElementById("source").innerText = shorten(msg.source.substring(0, msg.source.lastIndexOf("\\")),
+        maxItemLen);
+      document.getElementById("target").innerText = shorten(msg.target.substring(0, msg.target.lastIndexOf("\\")),
+        maxItemLen);
+
+      if (autocopy) {
+        console.log("copy");
+        $('.copy-file').addClass("hide-menu-item");
+      } else {
+        $('.delete-copy').addClass("hide-menu-item");
+      }
+
+      if (showgrid) {
+        console.log("grid")
+        $("#grid").removeClass("inactive");
+        document.getElementById("grid_toggle").innerText = "grid_off";
+      } else {
+        $("#grid").addClass("inactive");
+        document.getElementById("grid_toggle").innerText = "grid_on";
+      }
+
+      if (quicksort) {
+        console.log("sort")
+        $('.copy-file').addClass("hide-menu-item");
+        $('.quick-sort').addClass("hide-menu-item");
+        $("#triage").removeClass("hide");
+        $(".delete-copy").addClass("hide-menu-item");
+      } else {
+        $("#triage").addClass("hide");
+        $('.quick-sort').removeClass("hide-menu-item");
+
+
+      }
+
+    });
+
+
     $(document).ready(function () {
+      // get configuration
+      socket.emit('getconfig', "hi there!")
+
       // Setup our variables
       var cH = $('#crosshair-h'),
         cV = $('#crosshair-v');
@@ -127,8 +178,8 @@
         cV.css('left', e.pageX);
 
         /* $('#file-info').css({
-          top: e.pageY + 'px',
-          left: e.pageX + 'px'
+        	top: e.pageY + 'px',
+        	left: e.pageX + 'px'
         }, 800); */
         // $('#file-info').text( "X: " + x + "px, Y: " + y + "px");
         e.stopPropagation();
@@ -262,7 +313,7 @@
       display: none;
       position: absolute;
       /* top: 0;
-      left: 0; */
+			left: 0; */
       bottom: 0;
       right: 0;
       padding: 10px;
@@ -518,8 +569,8 @@
       <span id="quick_sort" class="material-icons">category</span> Show/hide Quick Sort
     </div>
     <!--div class="item" onclick="eyeDropper();">
-     Eye Dropper
-    </div-->
+		 Eye Dropper
+		</div-->
     <hr />
     <div class="item clip" data-clipboard-target="#filename" title="Click to copy filename">
       <span class="material-icons">description</span> <span id="filename">Filename</span>
