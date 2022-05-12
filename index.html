@@ -9,6 +9,7 @@
   <!-- https://fonts.google.com/icons?selected=Material+Icons&icon.set=Material+Icons -->
   <script src='https://code.jquery.com/jquery-1.9.1.min.js'></script>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>
   <script>
     var socket = io();
 
@@ -34,6 +35,12 @@
       } else {
         document.getElementById("flash").innerText = "flash_on";
       }
+      if (msg.ISO == "") {
+        $('#exif').addClass("hide-menu-item")
+      } else {
+        $('#exif').removeClass("hide-menu-item")   
+      }
+    
     });
 
     function deleteFromTarget() {
@@ -41,7 +48,12 @@
     }
 
     function deleteFromCamera() {
-      socket.emit('delete camera', document.getElementById("container").getAttribute('data-content'));
+      let confirmAction = confirm("WARNING! Are you sure you want to delete the original photo? This action cannot be undone.");
+        if (confirmAction) {
+          // alert("Source file deleted");
+          socket.emit('delete camera', document.getElementById("container").getAttribute('data-content'));
+        } else {
+        }
     }
 
     function toggleGrid() {
@@ -93,6 +105,8 @@
           }
         },
         false);
+
+      new ClipboardJS('.clip');
 
     });
   </script>
@@ -242,6 +256,11 @@
       background: #454545;
     }
 
+    #context-menu .item.warning:hover {
+      background: #454545;
+      color: rgb(255, 0, 0);
+    }
+
     #context-menu .item i {
       display: inline-block;
       margin-right: 5px;
@@ -249,8 +268,8 @@
 
     #context-menu hr {
       margin: 2px 4px;
-      border: 1px solid #454545;
-      border-color: #454545;
+      border: 1px solid #999999;
+      border-color: #999999;
     }
 
     .hide-menu-item {
@@ -265,7 +284,17 @@
       display: inline-flex;
       vertical-align: top;
       margin-right: 4px;
+      font-size: 24px;
     }
+
+    #context-menu .item#exif div {
+      font-size: 16px;
+      padding-bottom: 8px;
+    }
+    
+    .item#exif .material-icons {
+      font-size: 20px;
+    }  
   </style>
   <script>
     function eyeDropper() {
@@ -316,12 +345,15 @@
           disableZoom: false,
           cursor: "zoom-in"
         })
+        magnifier.zoom(2, { animate: true })
+        document.getElementById("zoom_toggle").innerText = "zoom_out";
       } else {
         magnifier.setOptions({
           disablePan: true,
           disableZoom: true,
           cursor: "initial"
         })
+        document.getElementById("zoom_toggle").innerText = "zoom_in";
       }
       panzoomDisabled = !panzoomDisabled;
 
@@ -331,12 +363,12 @@
       div.setAttribute("onmousemove","zoom(event)");
       div.classList.add('zoom');*/
     }
-    
+
     window.addEventListener('load', function () {
       const element = document.getElementById('grid')
       magnifier = Panzoom(element, {
         disablePan: true,
-        disableZoom: true,        
+        disableZoom: true,
         maxScale: 4,
         canvas: true,
         overflow: 'hidden',
@@ -348,7 +380,9 @@
       const parent = element.parentElement
       parent.addEventListener('wheel', magnifier.zoomWithWheel);
 
-      element.ondblclick = function(){toggleZoom()};
+      element.ondblclick = function () {
+        toggleZoom()
+      };
 
     });
   </script>
@@ -364,31 +398,32 @@
       <span id="grid_toggle" class="material-icons">grid_off</span> Grid on/off
     </div>
     <div class="item" onclick="toggleZoom();">
-      <span id="zoom" class="material-icons">zoom_in</span> Zoom on/off
+      <span id="zoom_toggle" class="material-icons">zoom_in</span> Zoom on/off
     </div>
-    <div class="item">
+    <!--div class="item" onclick="eyeDropper();">
+     Eye Dropper
+    </div-->
+    <div class="item clip" data-clipboard-target="#filename" title="Click to copy">
       <span class="material-icons">description</span> <span id="filename">Filename</span>
     </div>
-    <div class="item">
+    <div class="item clip" data-clipboard-target="#source" title="Click to copy">
       <span class="material-icons">photo_camera</span> <span id="source">Source Folder</span>
     </div>
-    <div class="item">
+    <div class="item clip" data-clipboard-target="#target" title="Click to copy">
       <span class="material-icons">desktop_windows</span> <span id="target">Target Folder</span>
     </div>
     <div class="item" onclick="deleteFromTarget();">
       <span class="material-icons">image</span> Delete Copy
     </div>
-    <!--div class="item" onclick="eyeDropper();">
-     Eye Dropper
-  </div-->
-    <div class="item" id="delete_original" title="Ctrl-click to delete">
+    <div class="item warning" id="delete_original" title="Ctrl-click to delete">
       <span class="material-icons">sd_card</span> Delete Original
     </div>
-    <div class="item">
-      <span class="material-icons">camera</span> <span id="F"></span>
-      <span class="material-icons">shutter_speed</span> <span id="SS"></span> <br />
-      <span class="material-icons">camera_roll</span> <span id="ISO"></span>
-      <span id="flash" class="material-icons">flash_on</span>
+    <hr />
+    <div class="item hide-menu-item" id="exif">
+      <div><span class="material-icons">camera</span> F <span id="F"></span>
+      <span class="material-icons">shutter_speed</span> SS <span id="SS"></span></div>
+      <div><span class="material-icons">camera_roll</span> ISO <span id="ISO"></span>
+      <span id="flash" class="material-icons">flash_on</span></div>
     </div>
   </div>
   <div id="crosshair-h" class="hair"></div>
