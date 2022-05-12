@@ -108,6 +108,7 @@ app.get('/', (req, res) => {
 			break;
 		case "star" :
 			console.log("sort action: " + msg);
+			msg = "starred"; // for folder name
 			break;			
 		default :		
 	}
