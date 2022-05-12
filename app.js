@@ -111,11 +111,13 @@ app.get('/', (req, res) => {
 			break;			
 		default :		
 	}
-	
+
+	var originalFile = targetFile;
+	if (!(autoCopy)) { originalFile = sourceFile; }
 	if (!(fs.existsSync(path.join(targetFolder, msg)))) {
 		fs.mkdirSync(path.join(targetFolder, msg));
 	}	
-	fs.renameSync(targetFile, path.join(targetFolder, msg, filename))
+	fs.renameSync(originalFile, path.join(targetFolder, msg, filename))
 		
   }); 
   
