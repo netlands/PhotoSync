@@ -176,7 +176,7 @@ function processFile(path) {
 				exif.flash = "";
 				io.emit('new data', exif);				
 			} else {
-				console.log(exifData); // Do something with your data!
+				// console.log(exifData); // Do something with your data!
 				exif.SS = fra_to_dec(exifData.exif.ExposureTime);
 				exif.F = exifData.exif.FNumber;
 				exif.ISO = exifData.exif.ISO;
