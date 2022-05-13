@@ -62,7 +62,7 @@ There are a few functions available in the right-click context menu to work with
 
 ## Disclaimer
 
-I made this for personal use and posted it here in case someone else has a similar problem. Feel free to re-use the code and extend the functionallity, but use the app at your own risk. 
+I am far from a professional programmer. I made this for personal use and posted it here in case someone else has a similar problem. Feel free to re-use the code and extend the functionallity, but use the app at your own risk. 
 
 Copy functionallity is implemented using standard JavaScript filesystem functions, and although there is an option to delete files from the camera I strongly advise against this as it is always better to be safe than sorry when working with data. 
 
