@@ -14,6 +14,7 @@
     var socket = io();
 
     var sourceFile, targetFile;
+    var firstFile = true;
 
     var maxItemLen = 20;
 
@@ -52,6 +53,11 @@
         $('#exif').addClass("hide-menu-item")
       } else {
         $('#exif').removeClass("hide-menu-item")
+      }
+
+      if (quicksort && firstFile) {
+        $("#triage").removeClass("hide"); 
+        firstFile = false;
       }
 
       // reset quicksort for each file
@@ -118,7 +124,7 @@
     var targetfolder, sourcefolder, extenstion, autocopy, quicksort, showgrid
 
     socket.on('config', function (msg) {
-      console.log(msg);
+      // console.log(msg);
       let config = msg;
       targetfolder = config.target;
       sourcefolder = config.source;
@@ -132,28 +138,31 @@
         maxItemLen);
 
       if (autocopy) {
-        console.log("copy");
+        console.log("autocopy on");
         $('.copy-file').addClass("hide-menu-item");
       } else {
+        console.log("autocopy off");
         $('.delete-copy').addClass("hide-menu-item");
       }
 
       if (showgrid) {
-        console.log("grid")
+        console.log("grid on")
         $("#grid").removeClass("inactive");
         document.getElementById("grid_toggle").innerText = "grid_off";
       } else {
+        console.log("grid off")
         $("#grid").addClass("inactive");
         document.getElementById("grid_toggle").innerText = "grid_on";
       }
 
       if (quicksort) {
-        console.log("sort")
+        console.log("quicksort on")
         $('.copy-file').addClass("hide-menu-item");
-        $('.quick-sort').addClass("hide-menu-item");
-        $("#triage").removeClass("hide");
+        // $('.quick-sort').addClass("hide-menu-item");
+        // $("#triage").removeClass("hide"); // hide untill first picture loaded
         $(".delete-copy").addClass("hide-menu-item");
       } else {
+        console.log("quicksort off")
         $("#triage").addClass("hide");
         $('.quick-sort').removeClass("hide-menu-item");
 

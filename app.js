@@ -94,6 +94,7 @@ app.get('/', (req, res) => {
 		console.log('deleted file: ' + targetFile);
 	  })
   });
+  
   socket.on('delete camera', (msg) => {
 	fs.unlink(sourceFile, (err) => {
 		if (err) {
@@ -103,10 +104,12 @@ app.get('/', (req, res) => {
 		console.log('deleted file: ' + sourceFile);
 	  }) 
   });
+
   socket.on('copy source', (msg) => {
 	fs.copyFileSync(msg, targetFile);
 	console.log('Manually copied ' + msg);
   });
+
   socket.on('sort', (msg) => {
 	var path = require('path');
 	switch (msg) {
@@ -124,12 +127,18 @@ app.get('/', (req, res) => {
 		default :		
 	}
 
-	var originalFile = targetFile;
-	if (!(autoCopy)) { originalFile = sourceFile; }
 	if (!(fs.existsSync(path.join(targetFolder, msg)))) {
 		fs.mkdirSync(path.join(targetFolder, msg));
-	}	
-	fs.renameSync(originalFile, path.join(targetFolder, msg, filename))
+	}
+
+	if (!(autoCopy)) { 
+		// COPY source
+		fs.copyFileSync(sourceFile, path.join(targetFolder, msg, filename)) 
+	}	else {
+		// MOVE copy
+		fs.renameSync(targetFile, path.join(targetFolder, msg, filename))
+	}
+	
 		
   }); 
   
