@@ -52,5 +52,8 @@ To streamline the startup process, use your browser to create an app from the we
 You can update the configuration depending on your workflow. Options can be set or selected in the **config.json** file or via the right-click context menu.
 
 - The most basic option is to let the tool automatically copy each new photo to your PC. Review the photo in the app. If needed make adjustments to the camera settings and/or subject and re-shoot or continue to the next photo.
-- The second option is to activate the "Quick Sort" buttons (optionally in combination with the auto copy function). Each photo can be reviewed on your PC screen and by using the Quick Sort buttons you can move the image into one of four folders: keep, review, star, or discard. The options are non-destructive, since discarded photos are stored in a folder called trash that can later be deleted. 
+- Another option is to activate the "Quick Sort" buttons (optionally in combination with the auto copy function). This allows you to quickly triage/sort photos after each shot. Each photo can be reviewed on your PC screen and by using the Quick Sort buttons you can move the image into one of four folders: keep, review, star, or discard. 
 ![Quick Sort Buttons](./quick-sort-buttons.png)
+The options are non-destructive, since discarded photos are stored in a folder called trash that can later be deleted. 
+
+There are a few functions available in the right-click context menu to work with the files and make reviewing easier. The available option depend on the configuration.
