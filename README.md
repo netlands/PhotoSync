@@ -52,10 +52,18 @@ To streamline the startup process, use your browser to create an app from the we
 You can update the configuration depending on your workflow. Options can be set or selected in the **config.json** file or via the right-click context menu.
 
 - The most basic option is to let the tool automatically copy each new photo to your PC. Review the photo in the app. If needed make adjustments to the camera settings and/or subject and re-shoot or continue to the next photo.
-- Another option is to activate the "Quick Sort" buttons (optionally in combination with the auto copy function). This allows you to quickly triage/sort photos after each shot. Each photo can be reviewed on your PC screen and by using the Quick Sort buttons you can move the image into one of four folders: keep, review, star, or discard.
+- Another option is to activate the "Quick Sort" buttons (optionally in combination with the auto copy function). This allows you to quickly triage/sort photos after each shot. Each photo can be reviewed on your PC screen and by using the Quick Sort buttons you can move the image into one of four folders: **keep**, **star**, **review**, or **discard**. 
 
-![Quick Sort Buttons](./quick-sort-buttons.png)
+    ![Quick Sort Buttons](./quick-sort-buttons.png)
 
-The options are non-destructive, since discarded photos are stored in a folder called trash that can later be deleted. 
+    The options are non-destructive, since discarded photos are stored in a folder called trash that can later be deleted. 
 
-There are a few functions available in the right-click context menu to work with the files and make reviewing easier. The available option depend on the configuration.
+There are a few functions available in the right-click context menu to work with the files and make reviewing easier. The available options depend on the configuration.
+
+## Disclaimer
+
+I made this for personal use and posted it here in case someone else has a similar problem. Feel free to re-use the code and extend the functionallity, but use the app at your own risk. 
+
+Copy functionallity is implemented using standard JavaScript filesystem functions, and although there is an option to delete files from the camera I strongly advise against this as it is always better to be safe than sorry when working with data. 
+
+The actual connection to your camera depends on the operating system or a third-party app so I suggest to check for any known issues before using.
