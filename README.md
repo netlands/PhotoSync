@@ -10,7 +10,7 @@ I previously used a dedicated tether app for my camera (Lumon DMC-GX8) but after
 
 Workflow: Connect camera to PC > Take picture > Automatically transfer or Review on a PC screen and optionally transfer the picture > Move to the next picture.
 
-One additional requirement for me was the ability to check the layout of the pictures, especially straight lines and centering (product photography). Having an option to overlay a grid and quickly zoom in was a secondary requirement. I also was looking for a quick "one-click" non-destructive way to sort/triage files for further processing (keep, star, discard). 
+An additional requirement for me was the ability to check the layout of the pictures, especially straight lines and centering (product photography). Having an option to overlay a grid and quickly zoom in would be helpful. I also was looking for a "one-click" non-destructive way to sort/triage files for further processing (keep, star, discard). 
 
 ## Requirements
 Node.js
@@ -37,7 +37,7 @@ The config file alows you to set some defaults.
 
 ## Start
 
-Open a terminal windows or command line:
+Open a terminal window or command line:
 
     node app
 
