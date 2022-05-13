@@ -4,13 +4,13 @@ Also known as poor man's tether, a basic camera to PC photo sync application imp
 
 ## Problem
 
-Many (older) cameras do not allow the camera to be tethered to your PC while taking pictures. Although you can often connect the camera via a USB camera you need specialized software or a workaround to review/process the pictures.
+Many (older) cameras do not allow the camera to be tethered to your PC while taking pictures. Although you can often connect the camera via a USB cable, you need specialized software or a workaround to review/process the pictures.
 
-I previously used a dedicated tether app for my camera but after a few years, this app understandably looks to be no longer maintained or supported. I needed an alternative way to review pictures that I had taken on my computer screen to verify the colors and layout.
+I previously used a dedicated tether app for my camera (Lumon DMC-GX8) but after a few years, this app understandably looks to be no longer maintained or supported. I needed an alternative way to review pictures that I had taken on my computer screen to verify the colors and layout.
 
 Workflow: Connect camera to PC > Take picture > Automatically transfer or Review on a PC screen and optionally transfer the picture > Move to the next picture.
 
-One additional  requirement for me was the ability to check the layout of the pictures, especially straight lines and centering (product photography). Having an option to overlay a grid and quickly zoom in was a secondary requirement.
+One additional requirement for me was the ability to check the layout of the pictures, especially straight lines and centering (product photography). Having an option to overlay a grid and quickly zoom in was a secondary requirement. I also was looking for a quick "one-click" non-destructive way to sort/triage files for further processing (keep, star, discard). 
 
 ## Requirements
 Node.js
