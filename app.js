@@ -115,6 +115,7 @@ app.get('/', (req, res) => {
 			break;
 		case "discard" :
 			console.log("sort action: " + msg);
+			msg = "trash"; // for folder name
 			break;
 		case "star" :
 			console.log("sort action: " + msg);
