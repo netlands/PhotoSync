@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Simple Photo Sync</title>
+  <script src='https://code.jquery.com/jquery-1.9.1.min.js'></script>
+  <script src="https://cdn.jsdelivr.net/npm/before-after-slider@1.0.0/dist/slider.bundle.js"></script>
+  <!-- compare: https://github.com/VincentTV/before-after-slider -->
+  <link rel="stylesheet" type="text/css"
+    href="https://cdn.jsdelivr.net/gh/cotton123236/zoomist@latest/dist/zoomist.min.css" />
+  <script src="https://cdn.jsdelivr.net/gh/cotton123236/zoomist@latest/dist/zoomist.min.js"></script>
+  <!-- zoom: https://github.com/cotton123236/zoomist -->
+  <!-- grid: https://stackoverflow.com/questions/32556463/overlay-grid-on-responsive-image -->
+  <!-- crosshair: https://codepen.io/michaelsboost/pen/DEQzoN -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <!-- https://fonts.google.com/icons?selected=Material+Icons&icon.set=Material+Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.5.0/dist/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>
+
+  <script>
+    var socket = io(); 
+
+    var sourceFile, targetFile;
+    var firstFile = true;
+
+    var maxItemLen = 20;
+	
+    var showgrid = true;
+    var showCompare = false;
+    var zoomActive = false;
+    var showCrosshair = true;
+    var showFileinfo = true;
+    var hideGridOnMouseOver = true;
+
+    socket.on('new photo', function (msg) {
+      // console.log(msg);
+      document.getElementById("photo").src = msg;
+      $("#triage").removeClass("done");
+    });
+    socket.on('new data', function (msg) {
+      console.log(msg);
+      document.getElementById("photo").title = msg.filename;
+      $('#file-info').text("SS " + msg.SS + ", F " + msg.F + ", ISO " + msg.ISO + ", " + msg.EV + " EV, flash " +
+        msg
+        .flash);
+      $('#file-info').show();
+      sourceFile = msg.source;
+      targetFile = msg.target;
+      document.getElementById("container").setAttribute('data-content', msg.filename);
+      document.getElementById("filename").innerText = shorten(msg.filename, maxItemLen);
+      document.getElementById("source").innerText = shorten(msg.source.substring(0, msg.source.lastIndexOf("\\")),
+        maxItemLen);
+      document.getElementById("target").innerText = shorten(msg.target.substring(0, msg.target.lastIndexOf("\\")),
+        maxItemLen);
+      document.getElementById("ISO").innerText = msg.ISO;
+      document.getElementById("F").innerText = msg.F;
+      document.getElementById("SS").innerText = msg.SS;
+      document.getElementById("EV").innerText = msg.EV;
+      if (msg.flash.includes("not")) {
+        document.getElementById("flash").innerText = "flash_off";
+      } else {
+        document.getElementById("flash").innerText = "flash_on";
+      }
+
+      if (msg.ISO == "") {
+        $('#exif').addClass("hide-menu-item")
+      } else {
+        $('#exif').removeClass("hide-menu-item")
+      }
+
+      if (quicksort && firstFile) {
+        $("#triage").removeClass("hide"); 
+        firstFile = false;
+      }
+
+      // reset quicksort for each file
+      $('#star').show();
+      $('#discard').show();
+      $('#keep').show();
+      $('#review').show();
+
+    });
+
+    function deleteFromTarget() {
+      socket.emit('delete target', document.getElementById("container").getAttribute('data-content'));
+    }
+
+    function deleteFromCamera() {
+      let confirmAction = confirm(
+        "WARNING! Are you sure you want to delete the original photo? This action cannot be undone.");
+      if (confirmAction) {
+        // alert("Source file deleted");
+        socket.emit('delete camera', document.getElementById("container").getAttribute('data-content'));
+      } else {}
+    }
+
+    function copyFile() {
+      socket.emit('copy source', sourceFile);
+    }
+
+
+    function quickSort(action) {
+      socket.emit('sort', action);
+      $("#triage").addClass("done");
+      switch (action) {
+        case "keep":
+          $('#discard').hide();
+          $('#star').hide();
+          $('#review').hide();
+          break;
+        case "discard":
+          $('#keep').hide();
+          $('#star').hide();
+          $('#review').hide();
+          break;
+        case "star":
+          $('#keep').hide();
+          $('#discard').hide();
+          $('#review').hide(); 
+        case "review":
+          $('#keep').hide();
+          $('#discard').hide();
+          $('#star').hide();
+          break;
+        default:
+      }
+    }
+
+
+
+
+    var targetfolder, sourcefolder, extenstion, autocopy, quicksort, showgrid
+
+    socket.on('config', function (msg) {
+      // console.log(msg);
+      let config = msg;
+      targetfolder = config.target;
+      sourcefolder = config.source;
+      extenstion = config.extension;
+      autocopy = config.settings.autocopy;
+      showgrid = config.settings.showgrid;
+      quicksort = config.settings.quicksort;
+      document.getElementById("source").innerText = shorten(msg.source.substring(0, msg.source.lastIndexOf("\\")),
+        maxItemLen);
+      document.getElementById("target").innerText = shorten(msg.target.substring(0, msg.target.lastIndexOf("\\")),
+        maxItemLen);
+
+      if (autocopy) {
+        console.log("autocopy on");
+        $('.copy-file').addClass("hide-menu-item");
+      } else {
+        console.log("autocopy off");
+        $('.delete-copy').addClass("hide-menu-item");
+      }
+
+      if (showgrid) {
+        console.log("grid on")
+        $("#grid").removeClass("inactive");
+        document.getElementById("grid_toggle").innerText = "grid_off";
+      } else {
+        console.log("grid off")
+        $("#grid").addClass("inactive");
+        document.getElementById("grid_toggle").innerText = "grid_on";
+      }
+
+      if (quicksort) {
+        console.log("quicksort on")
+        $('.copy-file').addClass("hide-menu-item");
+        // $('.quick-sort').addClass("hide-menu-item");
+        // $("#triage").removeClass("hide"); // hide untill first picture loaded
+        $(".delete-copy").addClass("hide-menu-item");
+      } else {
+        console.log("quicksort off")
+        $("#triage").addClass("hide");
+        $('.quick-sort').removeClass("hide-menu-item");
+
+
+      }
+
+    });
+
+
+
+    $(document).ready(function () {
+      console.log("DOM ready")
+
+      // get configuration
+      socket.emit('getconfig', "hi there!")
+
+
+      // Setup our variables
+      var cH = $('#crosshair-h'),
+        cV = $('#crosshair-v');
+
+      $(this).on('mousemove touchmove', function (e) {
+        var x = e.pageX - 1;
+        var y = e.pageY - 1;
+        cH.css('top', e.pageY);
+        cV.css('left', e.pageX);
+
+        /* $('#file-info').css({
+        	top: e.pageY + 'px',
+        	left: e.pageX + 'px'
+        }, 800); */
+        // $('#file-info').text( "X: " + x + "px, Y: " + y + "px");
+        e.stopPropagation();
+      });
+
+      $("#container").mouseleave(function () {
+        $(".hair").hide();
+        $("#file-info").hide();
+		if (hideGridOnMouseOver && showgrid) {
+			$("#image").addClass("grid");
+		}
+      });
+      $("#container").mouseenter(function () {
+        if (showCrosshair) {
+          $(".hair").show();
+		if (hideGridOnMouseOver && showgrid) {
+			$("#image").removeClass("grid");
+		}
+        }
+        if (!($('#file-info').text() == "")) {
+          if (showFileinfo) {
+            $('#file-info').show();
+          }
+        }
+      });
+
+      new ClipboardJS('.clip');
+
+    });
+    window.addEventListener('load', function () {
+      console.log("Page content loaded")
+      if (showgrid) {
+        $("#image").addClass("grid");
+      }
+      const divDelete = document.querySelector('#delete_original');
+
+      divDelete.addEventListener("click",
+        function (e) {
+          if (e.ctrlKey) {
+            deleteFromCamera();
+          }
+        },
+        false);
+
+
+    })
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    img#photo {
+      max-width: 100%;
+      max-height: 100vh;
+      display: block;
+      /* remove extra space below image */
+    }
+
+    #container {
+      position: relative;
+      display: grid;
+      width: fit-content;
+      height: fit-content;
+      border: 1px solid black;
+    }
+
+    #image {
+      width: fit-content;
+      height: fit-content;
+    }
+
+    #zoom {
+      position: absolute;
+    }
+
+    #reference {
+      display: none;
+    }
+
+    .grid {
+      display: inline-block;
+      position: relative;
+      vertical-align: top;
+    }
+
+    .grid::before,
+    .grid::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, #ccc 1px, transparent 1px);
+      background-size: 10%;
+    }
+
+    .grid::before {
+      box-shadow: inset 0px 0px 0 1px #ccc;
+    }
+
+    .grid::after {
+      transform: rotate(90deg);
+    }
+
+    .slider-container .slider-wrap .slider-btn {
+      width: 1px;
+    }
+
+    .slider-container .slider-wrap .slider-btn:hover {
+      background: rgba(0, 0, 0, 0.5);
+      width: 8px;
+    }
+
+    .slider-container .slider-wrap .slider-btn::after {
+      background-color: rgb(0 0 0 / 0%);
+      content: '';
+      box-shadow: none;
+    }
+
+    #crosshair-h {
+      z-index: 100;
+      width: 100%;
+    }
+
+    #crosshair-v {
+      z-index: 100;
+      height: 100%;
+    }
+
+    .hair {
+      position: fixed;
+      top: 0;
+      left: 0;
+      margin-top: -3px;
+      margin-left: -2px;
+      background: transparent;
+      border-top: 1px dotted #000;
+      border-left: 1px dotted #000;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .hide {
+      display: none;
+    }
+
+    #file-info {
+      display: none;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      padding: 10px;
+      margin: 10px;
+      font: 14px arial;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 24px;
+      z-index: 9;
+    }
+
+    #file-info:hover {
+      top: 0;
+      left: 0;
+      width: fit-content;
+      height: fit-content;
+    }
+
+    #triage {
+      z-index: 10;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      margin: 10px;
+      background: rgba(0, 0, 0, 0);
+    }
+
+    #triage .material-icons {
+      position: relative;
+      display: inline-block;
+      z-index: 11;
+      font-size: 50px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-top: 10px;
+      transition: all .2s ease-in-out;
+    }
+
+    #triage .material-icons:hover {
+      transform: scale(1.2);
+    }
+
+    div#discard::after {
+      content: 'xxx';
+      top: 16px;
+      left: 8px;
+      position: absolute;
+      width: 34px;
+      height: 22px;
+      background: #ee685c80;
+    }
+
+    div#review::after {
+      content: 'xxx';
+      top: 16px;
+      left: 8px;
+      position: absolute;
+      width: 34px;
+      height: 22px;
+      background: #4ccce64d;
+    }
+
+    div#star::after {
+      content: 'xxx';
+      top: 16px;
+      left: 8px;
+      position: absolute;
+      width: 34px;
+      height: 22px;
+      background: #fbbd044d;
+    }
+
+    #triage #discard,
+    .discard {
+      color: #ee685c;
+    }
+
+    #triage #keep,
+    .keep {
+      color: #34a853;
+    }
+
+    #triage #review,
+    .review {
+      color: #4ecde6;
+    }
+
+    #triage #star,
+    .star {
+      color: #fbbc04;
+    }
+
+    /* #669df6 */
+
+    #triage.done {
+      /* opacity: 0.5; */
+      filter: grayscale(50%);
+      pointer-events: none;
+    }
+
+    #context-menu {
+      position: fixed;
+      z-index: 10000;
+      width: 220px;
+      background: #999999;
+      border-radius: 5px;
+      transform: scale(0);
+      transform-origin: top left;
+    }
+
+    #context-menu.active {
+      transform: scale(1);
+      transition: transform 200ms ease-in-out;
+    }
+
+    #context-menu .item {
+      padding: 8px 10px;
+      font-size: 18px;
+      font-family: Calibri, sans-serif;
+      color: #eee;
+      cursor: pointer;
+    }
+
+    #context-menu .item:hover {
+      background: #454545;
+    }
+
+    #context-menu .item.warning:hover {
+      background: #454545;
+      color: rgb(255, 0, 0);
+    }
+
+    #context-menu .item i {
+      display: inline-block;
+      margin-right: 5px;
+    }
+
+    #context-menu hr {
+      margin: 2px 4px;
+      border: 1px solid #999999;
+      border-color: #999999;
+    }
+
+    .hide-menu-item {
+      display: none;
+    }
+
+    .show-menu-item {
+      display: block;
+    }
+
+    .material-icons {
+      display: inline-flex;
+      vertical-align: top;
+      margin-right: 4px;
+      font-size: 24px;
+    }
+
+    #context-menu .item#exif div {
+      font-size: 16px;
+      padding-bottom: 8px;
+    }
+
+    .item#exif .material-icons {
+      font-size: 20px;
+    }
+
+
+    /* ----------- */
+    .gridlines {
+      display: none;
+      position: absolute;
+      background-color: #ccc;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="context-menu">
+    <div class="item copy-file" onclick="copyFile();">
+      <span class="material-icons">file_copy</span> Copy Photo
+    </div>
+    <hr class="copy-file" />
+    <div class="item delete-copy" onclick="deleteFromTarget();">
+      <span class="material-icons">image</span> Delete Copy
+    </div>
+    <div class="item warning" id="delete_original" title="Ctrl-click to delete">
+      <span class="material-icons">sd_card</span> Delete Original
+    </div>
+    <hr />
+    <div class="item" onclick="toggleGrid();">
+      <span id="grid_toggle" class="material-icons">grid_off</span> Grid on/off
+    </div>
+    <div class="item" onclick="toggleCrosshair();">
+      <span id="grid_crosshair" class="material-icons">add</span> Crosshair on/off
+    </div>    
+    <div class="item" onclick="toggleZoom();">
+      <span id="zoom_toggle" class="material-icons">zoom_in</span> Zoom on/off
+    </div>
+    <div class="item" onclick="toggleCompare();">
+      <span id="zoom_compare" class="material-icons">compare</span> Compare on/off
+    </div>    
+    <div class="item quick-sort" onclick="toggleQuickSort();">
+      <span id="quick_sort" class="material-icons">category</span> Show/hide Quick Sort
+    </div>
+    <div class="item quick-sort" onclick="toggleFileinfo();">
+      <span id="file_info" class="material-icons">text_snippet</span> Show/hide Info
+    </div>    
+    <hr />
+    <div class="item clip hide-menu-item" data-clipboard-target="#filename" title="Click to copy filename">
+      <span class="material-icons">description</span> <span id="filename">Filename</span>
+    </div>
+    <div class="item clip" data-clipboard-target="#source" title="Click to copy source folder">
+      <span class="material-icons">photo_camera</span> <span id="source">Source Folder</span>
+    </div>
+    <div class="item clip" data-clipboard-target="#target" title="Click to copy target folder">
+      <span class="material-icons">desktop_windows</span> <span id="target">Target Folder</span>
+    </div>
+    <hr />
+    <div class="item hide-menu-item" id="exif">
+      <div><span class="material-icons">camera</span>F <span id="F"></span>
+        <span class="material-icons">shutter_speed</span>SS <span id="SS"></span></div>
+      <div><span class="material-icons">camera_roll</span>ISO <span id="ISO"></span>
+        <span class="material-icons">iso</span><span id="EV"></span> EV
+        <span id="flash" class="material-icons">flash_on</span></div>
+    </div>
+  </div>
+  <div id="crosshair-h" class="hair"></div>
+  <div id="crosshair-v" class="hair"></div>
+  <div id="container">
+    <div id="triage" class="hide">
+      <div id="keep" onClick="quickSort('keep')" title="Keep" class="material-icons keep">folder</div>
+      <div id="star" onClick="quickSort('star')" title="Star" class="material-icons star">folder_special</div>
+      <div id="review" onClick="quickSort('review')" title="Review" class="material-icons review">rule_folder</div>
+      <div id="discard" onClick="quickSort('discard')" title="Discard" class="material-icons discard">folder_delete
+      </div>
+    </div>
+    <span id="file-info">file info</span>
+    <div id="image">
+      <img id="photo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAMgBAMAAAApXhtbAAAAAXNSR0IArs4c6QAAABJQTFRF////teYd/38n/wDcP0jMAAAAoyafbwAABTRJREFUeNrt3U1OwkAYgGHBurc3IL1Cr8ABvCdXYMEFTDjBhBvAXmndqCmhVkL/hvZ5V4gJmHn4hgC1LPInxdTSEgARECACAkRAgAgIEAERECACAkRAJl5iCYYvu7ommBBbloAAERAgAgJEQAQEiIAAEZBJdfX2e3EY9fGxMiECIiBABASIgAARECACIiBABASIgAARECACoroa/sdwXX/11qK1LZgQW5aAABEQIAICREAEBIiAAFHXOaNcc+d9BzeSmxBbloAAERAgAiIgQAQEiIAAEZCZ5e3323p5+724MSG2LAERECACAkRAgAgIEAERECACAkQtaviAyml/TIiAANG9zyGq9LExIbYsAREQIAICRECACAgQAREQIAICRECACAgQAREQIAICRECACAgQAREQIAICRECACAgQAREQIAICRECACAgQAREQIAICRECACAgQAQEiIAICRECACAgQAQEiIAICRECACAgQAQEiIAICRECACAgQDVUS159ThP8eQCsTIiBABERAgAgIEAEBIiBABERAgAjIQ5dYgsaecxNiyxIQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIh6baaniU07uI3yZEJsWQICREAEBIiAABEQIAICREAEBIiAABEQIAICREAEJP6uDpRbZm1vMlhVEwJEQIAIiIAAERAgAgJEQIAICBABERAgAgJEQIAICBABERAgAgJEQIAICBABERAgAgJEQIBooOL7hp115fLnzoQIiIAAERAgAgJEQIAIiIAAERAgAgJEQIAIiIAAERAgalV8B8pt41ukxWv1p/JkQmxZAiIgQAQEiIAAERAgAiIgQAQEiIAAERAgAgLEEgBRQz0cl5VZVRMCREA8h+i78mhCbFkCIiBABASIgAARECACIiBABASIgEy0mX5ieDQhAgJEQIAICBABERAgAgJEQIAICBABERAgAgJEQIAICBABERAgAgJEQIAICBABASIgAgJEQIAICBABASIgAgJEQIAICBABASIgAgJEQIAICBABASIgAgJEQIAICBABASIgAgJEQICom0b4tuhevqk5NSECAkRAgAiIgAARECACAkRAgAiIgADRHSUj3nf+c+G8B2FCgAgIEAEBIiBABERAgAgIEAEBIiBABETjfoT7bvlNCBABASIgQAQEiIAICBABASIgQAQEiIAICBABASIgQAQEiIAICBABASIgQAQEiIAICBABASIgQAQEiIAICBABASIgQAQEiIAICBABASIgQAQEiIAAERABASIgQAQEiIAAERABASIgQAQEiIAAERABASIgQAQEiIAAERABASIgQAQEiIAAERABASIgQAQEiIAAERABASIgQAQEiIAAERABASIgQAQEiIAAERABASIgQNSmZPi7TK26CQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABEQAQEiIEAEBIiAABGQmZdYgiHL/vpFMCG2LAEBIiBABASIgOjylXrda8jiYIFMCBABERAgAgJEQIAICBABERAgAgJEQIAICBABERAgAgJEQIAICBABERAgAgJEQIAICBAB0UXOKDdo4XaQYLVsWQICRECACAgQAQEiIAICREAety+P6SZuuZQBmQAAAABJRU5ErkJggg==" alt="photo" />
+      <img id="reference" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAyAAAAMgBAMAAAApXhtbAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAASUExURWVlZQAAAMDAwP///1RUVJubm0kEFEkAAAAJcEhZcwAADsQAAA7EAZUrDhsAAASISURBVHja7d3RTcJAHMBhSm8Au4HpBCQu4AMrOKUr+OACJE5A2OAcQKovSkoK1dByPez3PVUwhdyP/xGFwGIBAAAAAAAACRWWIL2qc0k8HC0tT14EEQRBBEEQQRBEEAQRBEEQRBAuEjqF7qe8O83OhCAIggiCIIIgiCAIIgiCIIggCCIIggiCIIIgCKeE81fF0xdXFm2oaEJsWQgiCIIIgiCCIAiCCIIggjC2YAl6lasRTrIxIbYsBBEEQQRBEAQRBEEEQRBBEGRm/Pv9b1ofdVebEFsWgiCIIAgiCIIIgiCCIAiCCIIggjBAzwtUPvbHhCCIIFz6HEL7gVubEFsWgiCIIAgiCIIIgiCCIAiCCIIggiCIIAgiCIIgiCAIIgiCCIIggiAIggiCIIIgiCAIIgiCIIggCCIIggiCIIIgCIIIgiCCIIggCCIIggiCIAgiCIIIgiCCIIggCIIggiCIIAgiCIIIgiAIIgiCCIIggpBKyOzxUf/yC83OhCCIIAiCIIIgiCAIIgiCCIIgCCIIgty0YAl67TcmxJaFIAgiCIIIgiCCIIggCIIggiCIIAgiCIIIgiAIIgiCCIIggiCIIAiCIIIgiCAIIgiCCIIgCCIIggiCIIIgiCAIgiCCIIggCCIIVzXTj4ldj3COj1cTYstCEEEQBEEEQRBBEEQQBBEEQRBEEAQRBEEEQRBBEARB8td5o1yzHXrK2qqaEEEQRBAEQRBBEEQQBBEEQQRBEEEQBEEEQRBBEEQQBBEEQRBEEAQRBEEEQRBBEARBBEEQQRBEEBLJ7xt2Yuu4uDMhCIIggiCIIAgiCIIIgiAIIgiCCIIggiCIIAiCIIIgiCAMkt8b5ar8Fmn/1v6pXJkQWxaCIIggCCIIggiCIIIgCIIIgiCCIIggCCIIgghiCQShxxXel7W1qiZEEATxHMK38sGE2LIQBEEEQRBBEEQQBBEEQRBEEAQRBEEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACgo0h/k0/XOOnzfwni+9QFQRBBEEQQBBEEQQRBEAQRBEEEQRBBSCpMeNsvhzvxKIQJEQRBBEEQQRBEEARBEEEQRBAEEQRBBEEQpn0Jd235TYggCCIIggiCIIIgCIIIgiCCIIggCCIIgiCIIAgiCIIIgiCCIAiCCIIggiCIIAgiCIIgiCAIIgiCCIIggiAIggiCIIIgiCAIIgiCIIggCCIIggiCIIIgiCAIgiCCIIggCCIIggiCIAgiCIIIgiCCIIggCIIggiCIIAgiCIIIgiAIIgiCCIIggiCIIAiCIIIgiCAIIgiCCIIgCCIIggiCIIIgiCAIgiCCIIggCCIIggiCIAgiCIIIAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN6WwBClV566IPwdLi5QXQQRBEEEQRBAEEYTUQt/fkJ/vFsiECIIgCCIIggiCIIIgiCAIgiCCIIggCCIIggiCIAgiCIIIgiCCIIggCIIggiCIIAgiCIIIgiAcCZYgpWgJAAAAAABm4QtFFR8Y7EupbAAAAABJRU5ErkJggg==" alt="reference" />
+	</div>
+  </div>
+  <button onClick="toggleGrid()">Toggle Grid</button><button onClick="toggleZoom()">Toggle Zoom</button><button
+    onClick="toggleCompare()">Toggle Compare</button><button onClick="toggleCrosshair()">Toggle
+    Crosshair</button><button onClick="toggleFileinfo()">Toggle File Info</button><button
+    onClick="toggleQuickSort()">Toggle Quick Sort</button>
+  <script>
+    function createGrid() {
+      // https://jsfiddle.net/madstop/bM5Kr/
+      width = document.getElementById("container").offsetWidth + 1;
+      size = Math.floor(width / 10);
+      document.querySelectorAll('.gridlines').forEach(e => e.remove());
+      var i,
+        height = $(window).height(),
+        width = $(window).width(),
+        ratioW = Math.floor(width / size),
+        ratioH = Math.floor(height / size);
+
+      for (i = 0; i <= ratioW; i++) // vertical grid lines
+        $('<div />').css({
+          'top': 1,
+          'left': i * size,
+          'width': 1,
+          'height': height
+        })
+        .addClass('gridlines')
+        .insertBefore('#image');
+
+      for (i = 0; i <= ratioH; i++) // horizontal grid lines
+        $('<div />').css({
+          'top': 1 + i * size,
+          'left': 0,
+          'width': width,
+          'height': 1
+        })
+        .addClass('gridlines')
+        .insertBefore('#image');
+
+      $('.gridlines').show();
+    }
+
+    // ------------------------------------------------
+
+    function toggleQuickSort() {
+      $("#triage").toggleClass("hide");
+      $(".delete-copy").toggleClass("hide-menu-item");
+    }
+
+
+    function toggleGrid() {
+      if (!(showgrid)) {
+        // createGrid(); 
+        $("#image").addClass("grid");
+      } else {
+        // document.querySelectorAll('.gridlines').forEach(e => e.remove());
+        $("#image").removeClass("grid");
+      }
+      showgrid = !showgrid;
+    }
+
+    function destroyCompare() {
+      console.log("kill compare");
+      $('#compare').remove();
+      compare = undefined;
+      delete compare;
+      showCompare = false;
+    }
+
+    function createCompare() {
+      console.log("create compare");
+      $("<div id='compare'></div>").insertBefore($("#image")); // $(".xxx").append('<div id="compare"></div>');
+
+      var compare
+      options = {
+        el: '#compare', // The container, required
+        line: true, // Dividing line, default true
+        lineColor: "black" // Dividing line color, default rgba(0,0,0,0.5)
+      }
+
+      options.height = document.getElementById("container").offsetHeight - 1 + 'px';
+      options.width = document.getElementById("container").offsetWidth - 1 + 'px';      
+      options.beforeImg = $('#photo').attr('src');
+      options.afterImg = $('#reference').attr('src');
+      compare = new SliderBar(options);
+      showCompare = true;
+    }
+
+
+
+    function toggleCompare() {
+      console.log(showCompare);
+      if (showCompare) {
+        destroyCompare();
+        $('#image').show();
+      } else {
+        createCompare();
+        $('#image').hide();
+      }
+    }
+
+
+    var zoom;
+
+    function activateZoom() {
+      console.log("zooom on!")
+      options = {
+        fill: "cover",
+        height: '100%',
+        slider: true,
+        zoomer: true
+      }
+
+      $("<div id='zoom'></div>").insertBefore($("#image"));
+
+      $('#zoom').attr("data-zoomist-src", $('#photo').attr('src'));
+      zoom = new Zoomist("#zoom", options);
+      zoomActive = true;
+    }
+
+    function toggleZoom() {
+      if (zoomActive) {
+        document.getElementById('image').style.visibility = 'visible';
+        zoom.destroy();
+        $('#zoom').remove();
+        zoomActive = false;
+      } else {
+        activateZoom();
+        document.getElementById('image').style.visibility = 'hidden';
+      }
+    }
+
+
+    function toggleCrosshair() {
+      if (showCrosshair) {
+        $('.hair').addClass("hide");
+        showCrosshair = false;
+      } else {
+        $('.hair').removeClass("hide");
+        showCrosshair = true;
+      }
+    }
+
+    function toggleFileinfo() {
+      if (showFileinfo) {
+        $('#file-info').addClass("hide");
+        showFileinfo = false;
+      } else {
+        $('#file-info').removeClass("hide");
+        showFileinfo = true;
+      }
+    }
+
+
+    function hideMenu() {
+      document.getElementById("context-menu").classList.remove("active");
+    }
+
+    window.addEventListener('load', function () {
+      console.log("loaded");
+          document.getElementById("container").addEventListener("contextmenu", function (event) {
+
+            event.preventDefault();
+
+            var contextElement = document.getElementById("context-menu");
+
+            contextElement.addEventListener("click", hideMenu);
+            contextElement.addEventListener("mouseleave", hideMenu);
+
+            contextElement.style.top = (event.clientY - 4) + "px";
+            contextElement.style.left = (event.clientX - 4) + "px";
+            contextElement.classList.add("active");
+
+          });
+    });
+
+    function shorten(text, textLength) {
+      if (text.length > textLength) {
+        text = text.substring(0, textLength) + '...';
+      }
+      return text;
+    }
+
+
+
+
+          function resizeActions() {
+
+          }
+          window.onresize = resizeActions;
+  </script>
+</body>
+
+</html>

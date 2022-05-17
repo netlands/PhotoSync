@@ -21,11 +21,7 @@ const fs = require('fs');
 // https://stackoverflow.com/questions/23575218/convert-decimal-number-to-fraction-in-javascript-or-closest-fraction
 // https://socket.io/get-started/chat
 // https://expressjs.com/en/starter/static-files.html
-// https://stackoverflow.com/questions/32556463/overlay-grid-on-responsive-image
 // https://www.base64-image.de/
-
-// https://syntaxfix.com/question/14577/black-transparent-overlay-on-image-hover-with-only-css
-// https://codepen.io/michaelsboost/pen/DEQzoN
 
 let rawdata = fs.readFileSync('config.json');
 let config = JSON.parse(rawdata);
@@ -69,6 +65,10 @@ app.use(favicon(__dirname + '/camera.ico'));
 app.get('/', (req, res) => {
 	// res.send('<h1>Hello world</h1>');
 	res.sendFile(__dirname + '/index.html');
+  });
+  
+  app.get('/test/', (req, res) => {
+	res.sendFile(__dirname + '/test/test.html');
   });
   
   server.listen(3000, () => {
@@ -199,7 +199,8 @@ function processFile(path) {
 		target = path;	
 	}
 
-	imageAsBase64 = "data:image/jpeg;base64, " + fs.readFileSync(target, 'base64');
+	var sourceType = "jpeg";
+	imageAsBase64 = "data:image/" + sourceType + ";base64," + fs.readFileSync(target, 'base64');
 	// console.log(imageAsBase64);
 	io.emit('new photo', imageAsBase64);
 
