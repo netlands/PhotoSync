@@ -648,9 +648,11 @@
       if (!(showgrid)) {
         // createGrid(); 
         $("#image").addClass("grid");
+		document.getElementById("grid_toggle").innerText = "grid_off";
       } else {
         // document.querySelectorAll('.gridlines').forEach(e => e.remove());
         $("#image").removeClass("grid");
+		document.getElementById("grid_toggle").innerText = "grid_on";
       }
       showgrid = !showgrid;
     }
