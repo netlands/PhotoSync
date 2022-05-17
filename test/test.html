@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>
 
   <script>
-    var socket = io(); 
+    var socket = io();
 
     var sourceFile, targetFile;
     var firstFile = true;
@@ -38,40 +38,49 @@
       $("#triage").removeClass("done");
     });
     socket.on('new data', function (msg) {
-      console.log(msg);
-      document.getElementById("photo").title = msg.filename;
-      $('#file-info').text("SS " + msg.SS + ", F " + msg.F + ", ISO " + msg.ISO + ", " + msg.EV + " EV, flash " +
-        msg
-        .flash);
-      $('#file-info').show();
-      sourceFile = msg.source;
-      targetFile = msg.target;
-      document.getElementById("container").setAttribute('data-content', msg.filename);
-      document.getElementById("filename").innerText = shorten(msg.filename, maxItemLen);
-      document.getElementById("source").innerText = shorten(msg.source.substring(0, msg.source.lastIndexOf("\\")),
-        maxItemLen);
-      document.getElementById("target").innerText = shorten(msg.target.substring(0, msg.target.lastIndexOf("\\")),
-        maxItemLen);
-      document.getElementById("ISO").innerText = msg.ISO;
-      document.getElementById("F").innerText = msg.F;
-      document.getElementById("SS").innerText = msg.SS;
-      document.getElementById("EV").innerText = msg.EV;
-      if (msg.flash.includes("not")) {
-        document.getElementById("flash").innerText = "flash_off";
-      } else {
-        document.getElementById("flash").innerText = "flash_on";
-      }
-
-      if (msg.ISO == "") {
+        // console.log(msg);
+        $('#exif').removeClass("hide-menu-item")
+        document.getElementById("photo").title = msg.filename;
+        sourceFile = msg.source;
+        targetFile = msg.target;
+        $('#file-info').text(msg.filename); 
+        if ((msg.ISO == null) || (msg.ISO == "")) { 
+            //
+        } else {
+            if (msg.hasOwnProperty('ISO')) {
+              $('#file-info').text("SS " + msg.SS + ", F " + msg.F + ", ISO " + msg.ISO + ", " + msg.EV + " EV, flash " +
+                msg
+                .flash);
+              $('#file-info').show();
+              document.getElementById("container").setAttribute('data-content', msg.filename);
+              document.getElementById("filename").innerText = shorten(msg.filename, maxItemLen);
+              document.getElementById("source").innerText = shorten(msg.source.substring(0, msg.source.lastIndexOf("\\")),
+                maxItemLen);
+              document.getElementById("target").innerText = shorten(msg.target.substring(0, msg.target.lastIndexOf("\\")),
+                maxItemLen);
+              document.getElementById("ISO").innerText = msg.ISO;
+              document.getElementById("F").innerText = msg.F;
+              document.getElementById("SS").innerText = msg.SS;
+              document.getElementById("EV").innerText = msg.EV;
+              if (msg.flash.includes("not")) {
+                document.getElementById("flash").innerText = "flash_off";
+              } else {
+                document.getElementById("flash").innerText = "flash_on";
+              }
+            }  
+        }
+      if ((msg.ISO == null) || (msg.ISO == "")) {
         $('#exif').addClass("hide-menu-item")
       } else {
         $('#exif').removeClass("hide-menu-item")
       }
 
       if (quicksort && firstFile) {
-        $("#triage").removeClass("hide"); 
+        $("#triage").removeClass("hide");
         firstFile = false;
       }
+
+      
 
       // reset quicksort for each file
       $('#star').show();
@@ -116,7 +125,7 @@
         case "star":
           $('#keep').hide();
           $('#discard').hide();
-          $('#review').hide(); 
+          $('#review').hide();
         case "review":
           $('#keep').hide();
           $('#discard').hide();
@@ -155,11 +164,11 @@
 
       if (showgrid) {
         console.log("grid on")
-        $("#grid").removeClass("inactive");
+        $("#image").addClass("grid");
         document.getElementById("grid_toggle").innerText = "grid_off";
       } else {
         console.log("grid off")
-        $("#grid").addClass("inactive");
+        $("#image").removeClass("grid");
         document.getElementById("grid_toggle").innerText = "grid_on";
       }
 
@@ -246,6 +255,35 @@
         false);
 
 
+var canvas = document.getElementById("guides");
+var context = canvas.getContext("2d");
+
+// http://jsfiddle.net/PgKEt/2/
+canvas.addEventListener("click", function(event){
+  const shift = event.getModifierState("Shift");
+  const ctrl = event.getModifierState("Control");
+  //const alt = event.getModifierState("Alt");
+  if (ctrl && shift ) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+  } else if (ctrl && !(shift) ) {
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    var x = event.pageX - canvas.offsetLeft;
+    var y = event.pageY - canvas.offsetTop;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.beginPath();
+    context.moveTo(0,y-4); // offset crosshair
+    context.lineTo(3000,y);
+    context.moveTo(x-2,0); // offset crosshair
+    context.lineTo(x,3000);
+    context.strokeStyle = "blue";
+    context.stroke();
+    context.closePath();
+  }
+});
+
+
+
     })
   </script>
   <style>
@@ -270,6 +308,20 @@
       border: 1px solid black;
     }
 
+    #reference {
+      display: none;
+      z-index: 10;
+    }
+
+
+#guides
+{
+    cursor:default;
+    width: 100%;
+    height: 100%;
+    position:absolute;
+}
+
     #image {
       width: fit-content;
       height: fit-content;
@@ -277,6 +329,7 @@
 
     #zoom {
       position: absolute;
+      cursor: zoom-in;
     }
 
     #reference {
@@ -549,19 +602,19 @@
     </div>
     <div class="item" onclick="toggleCrosshair();">
       <span id="grid_crosshair" class="material-icons">add</span> Crosshair on/off
-    </div>    
+    </div>
     <div class="item" onclick="toggleZoom();">
       <span id="zoom_toggle" class="material-icons">zoom_in</span> Zoom on/off
     </div>
     <div class="item" onclick="toggleCompare();">
       <span id="zoom_compare" class="material-icons">compare</span> Compare on/off
-    </div>    
+    </div>
     <div class="item quick-sort" onclick="toggleQuickSort();">
       <span id="quick_sort" class="material-icons">category</span> Show/hide Quick Sort
     </div>
     <div class="item quick-sort" onclick="toggleFileinfo();">
       <span id="file_info" class="material-icons">text_snippet</span> Show/hide Info
-    </div>    
+    </div>
     <hr />
     <div class="item clip hide-menu-item" data-clipboard-target="#filename" title="Click to copy filename">
       <span class="material-icons">description</span> <span id="filename">Filename</span>
@@ -584,6 +637,7 @@
   <div id="crosshair-h" class="hair"></div>
   <div id="crosshair-v" class="hair"></div>
   <div id="container">
+    <canvas id="guides"></canvas>
     <div id="triage" class="hide">
       <div id="keep" onClick="quickSort('keep')" title="Keep" class="material-icons keep">folder</div>
       <div id="star" onClick="quickSort('star')" title="Star" class="material-icons star">folder_special</div>
@@ -646,13 +700,13 @@
 
     function toggleGrid() {
       if (!(showgrid)) {
-        // createGrid(); 
+        // createGrid();
         $("#image").addClass("grid");
-		document.getElementById("grid_toggle").innerText = "grid_off";
+        document.getElementById("grid_toggle").innerText = "grid_off";
       } else {
         // document.querySelectorAll('.gridlines').forEach(e => e.remove());
         $("#image").removeClass("grid");
-		document.getElementById("grid_toggle").innerText = "grid_on";
+        document.getElementById("grid_toggle").innerText = "grid_on";
       }
       showgrid = !showgrid;
     }
@@ -677,7 +731,7 @@
       }
 
       options.height = document.getElementById("container").offsetHeight - 1 + 'px';
-      options.width = document.getElementById("container").offsetWidth - 1 + 'px';      
+      options.width = document.getElementById("container").offsetWidth - 1 + 'px';  
       options.beforeImg = $('#photo').attr('src');
       options.afterImg = $('#reference').attr('src');
       compare = new SliderBar(options);
@@ -713,6 +767,7 @@
 
       $('#zoom').attr("data-zoomist-src", $('#photo').attr('src'));
       zoom = new Zoomist("#zoom", options);
+      document.getElementById("zoom_toggle").innerText = "zoom_out";
       zoomActive = true;
     }
 
@@ -721,6 +776,7 @@
         document.getElementById('image').style.visibility = 'visible';
         zoom.destroy();
         $('#zoom').remove();
+        document.getElementById("zoom_toggle").innerText = "zoom_in";
         zoomActive = false;
       } else {
         activateZoom();
