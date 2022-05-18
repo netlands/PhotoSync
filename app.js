@@ -72,8 +72,28 @@ app.get('/', (req, res) => {
   });
   
   server.listen(3000, () => {
-	console.log('listening on *:3000');
+    console.log('listening on http://localhost:3000 and http://' + getServerIp() + ":3000" );
   });
+
+  function getServerIp() {
+
+	var os = require('os');
+	var ifaces = os.networkInterfaces();
+	var values = Object.keys(ifaces).map(function(name) {
+	  return ifaces[name];
+	});
+	values = [].concat.apply([], values).filter(function(val){
+	  return val.family == 'IPv4' && val.internal == false;
+	});
+	for (let i = 0; i < values.length; i++) {
+		// console.log(values[i].address);
+		if (!(values[i].address.startsWith("172"))) {
+			return values[i].address;
+		}
+	  }
+	// return values.length ? values[1].address : '0.0.0.0';
+  }
+
 
   io.on('connection', (socket) => {
 	console.log('page accessed');
