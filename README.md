@@ -60,6 +60,9 @@ You can update the configuration depending on your workflow. Options can be set 
 
 There are a few functions available in the right-click context menu to work with the files and make reviewing easier. The available options depend on the configuration.
 
+![Quick Sort Buttons](./art/help.png)
+
+
 ## Disclaimer
 
 I am far from a professional programmer. I made this for personal use and posted it here in case someone else has a similar problem. Feel free to re-use the code and extend the functionallity, but use the app at your own risk. 
