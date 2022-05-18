@@ -5,6 +5,7 @@
   "settings": {
     "autocopy": true,
     "showgrid": true,
-    "quicksort": false
+    "quicksort": false,
+    "previousreference": true
   }
 }

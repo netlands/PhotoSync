@@ -32,11 +32,28 @@
     var showCrosshair = true;
     var showFileinfo = true;
     var hideGridOnMouseOver = true;
+    var previousReference = true;
 
     const colorThief = new ColorThief();
 
+    socket.on('disconnect', function () {
+      // Houston, we have a problem ...
+      console.log("Lost connection to watcher");
+      $('#file-info').html('<span class="dot warning"></span>Connection Lost. Check server');
+    })
+
+
+    socket.on('connect', function () {
+      console.log("Connected to watcher");
+      $('#file-info').html('<span class="dot"></span>Connected to server');
+      socket.emit('getconfig', "hi there!")
+    });
+
     socket.on('new photo', function (msg) {
       // console.log(msg);
+      if (previousReference) {
+        document.getElementById("reference").src = document.getElementById("photo").src;
+      }
       document.getElementById("photo").src = msg;
       $("#triage").removeClass("done");
     });
@@ -151,11 +168,12 @@
       let config = msg;
       targetfolder = config.target;
       sourcefolder = config.source;
-      $('#file-info').text("Watching folder " + sourcefolder);
+      $('#file-info').html('<span class="dot"></span>Watching folder ' + sourcefolder);
       extenstion = config.extension;
       autocopy = config.settings.autocopy;
       showgrid = config.settings.showgrid;
       quicksort = config.settings.quicksort;
+      previousReference = config.settings.previousreference;
       document.getElementById("source").innerText = shorten(msg.source.substring(0, msg.source.lastIndexOf("\\")),
         maxItemLen);
       document.getElementById("target").innerText = shorten(msg.target.substring(0, msg.target.lastIndexOf("\\")),
@@ -201,7 +219,7 @@
       console.log("DOM ready")
 
       // get configuration
-      socket.emit('getconfig', "hi there!")
+      // socket.emit('getconfig', "hi there!")
 
 
       // Setup our variables
@@ -505,6 +523,34 @@
       left: 0;
       width: fit-content;
       height: fit-content;
+    }
+
+    /* Group same frames together */
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 0;
+      }
+
+      /* more concise! */
+      50% {
+        opacity: 1;
+      }
+    }
+
+    .dot {
+      animation: blink 1s infinite;
+      float: left;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: greenyellow;
+      margin-right: 6px;
+    }
+
+    .dot.warning {
+      background: red;
     }
 
     #triage {
@@ -1068,6 +1114,7 @@
           const ctrl = event.getModifierState("Control");
           if (ctrl) {
             document.getElementById("reference").src = reader.result;
+            previousReference = false;
           } else {
             document.getElementById("photo").src = reader.result;
             $('#file-info').text(file.name);
