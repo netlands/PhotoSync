@@ -151,6 +151,7 @@
       let config = msg;
       targetfolder = config.target;
       sourcefolder = config.source;
+      $('#file-info').text("Watching folder " + sourcefolder);
       extenstion = config.extension;
       autocopy = config.settings.autocopy;
       showgrid = config.settings.showgrid;
@@ -655,6 +656,9 @@
       font-size: 20px;
     }
 
+    .debug {
+      display: none;
+    }
 
     /* ----------- */
     .gridlines {
@@ -685,10 +689,10 @@
       <span id="grid_crosshair" class="material-icons">add</span> Crosshair on/off
     </div>
     <div class="item" onclick="toggleZoom();">
-      <span id="zoom_toggle" class="material-icons">zoom_in</span> Zoom on/off
+      <span id="zoom_toggle" class="material-icons">zoom_in</span> Zoom View on/off
     </div>
     <div class="item" onclick="toggleCompare();">
-      <span id="zoom_compare" class="material-icons">compare</span> Compare on/off
+      <span id="zoom_compare" class="material-icons">compare</span> Compare View on/off
     </div>
     <div class="item quick-sort" onclick="toggleQuickSort();">
       <span id="quick_sort" class="material-icons">category</span> Show/hide Quick Sort
@@ -697,7 +701,7 @@
       <span id="file_info" class="material-icons">text_snippet</span> Show/hide Info
     </div>
     <hr />
-    <div class="item clip hide-menu-item" data-clipboard-target="#filename" title="Click to copy filename">
+    <div class="item clip" data-clipboard-target="#filename" title="Click to copy filename">
       <span class="material-icons">description</span> <span id="filename">Filename</span>
     </div>
     <div class="item clip" data-clipboard-target="#source" title="Click to copy source folder">
@@ -714,10 +718,14 @@
         <span class="material-icons">iso</span><span id="EV"></span> EV
         <span id="flash" class="material-icons">flash_on</span></div>
     </div>
+    <div class="item" title="Show help" onclick="showHelp();">
+      <span class="material-icons">help_outline</span> <span id="target">Help</span>
+    </div>
+    <hr />
   </div>
   <div id="crosshair-h" class="hair"></div>
   <div id="crosshair-v" class="hair"></div>
-  <div id="container">
+  <div id="container" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
     <canvas id="guides"></canvas>
     <div id="triage" class="hide">
       <div id="keep" onClick="quickSort('keep')" title="Keep" class="material-icons keep">folder</div>
@@ -726,7 +734,7 @@
       <div id="discard" onClick="quickSort('discard')" title="Discard" class="material-icons discard">folder_delete
       </div>
     </div>
-    <span id="file-info">file info</span>
+    <span id="file-info">Drag and drop an image file or connect a device.</span>
     <div id="image">
       <img id="photo"
         src="data:image/webp;base64,UklGRn4cAABXRUJQVlA4WAoAAAAIAAAA5wMA5wMAVlA4IIAbAACwKAGdASroA+gDPh0MhEICETcAYDielu/HyZ5etQzP0Q/mf4jeY/9B/n347/2P/texP4R8o/Pvxd/sf/M/0nBBf2/od/EPqt9P/sP67/2r/p/774z/qX5EebfxY/Xfyy+AL8U/iP9j/sP65f2//pf77j0AAfkP8w/wf+C/vv+Y/s/7J+wP+3/0D9evdb6tf8X+q/AB/G/5b/d/7h+1X9t///1H/gP8B4qfgHsBfx7+d/4P+3ftX/iP//9rX8H/rv7t+8X+S9sv5N/bv9J/mf3J/zf///An+NfzT/B/2z/L/8X/Af/7/tfbx7Af3X9ir9aP+OBaaVlIu5mpJGsWLFixYsWLFixYsWLFixYsWLFivh3ISsJ6jTi/yzUDhswEYrHpimXZ1GjOgWxtSLh3EWEoC/w94kF5kXczUkjWLFixYsWK+Cp96KDKxAHJCb5lACqg9xCFPzOIB+2x/3KIQkZgbJBMrJsD8XUtSdo6MSgZI1HZXAssoaArGd6pCmlG9Sh+09kv2cn9ulXQqjdzNSSNYsWLFixYsV8XitAjoHyMrOkjyDMIRRRBzJng73SyZshGQuVfx1BFYEvFbdk539BFu0q4yvkQisGwdH0i7makkaxYsWLFivjYSYmWKY800dG05TZeBQXqGGWgvAx8CyhVF5cl1jJ8aETM0sXw4hVf6RbtCGpnYZt1kQlBIu5mpJGsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYnLH2me4hTPZLcRkMGX6ssJlqW5AupJXNDwfCoH+/ba6l7qFxvL2xC6liDVch5wg1fWcK1BeFyaWDGr53FDM6pZL/lLQSxrbSLuZqSRrFixYsWLFixXxfDs8saFvr2irc6qCHInJTg+vYKWdI6YziT0AVCrgSsr6CLHBmEJHgOGoQOa8GbjhClFb+kXczUkjWLFixYsWLFfFjF5fhFyo16MzTwBwHFE6vlQWwTJ3cuTEdBJX4dxcrWZVQNRyQGUh5MTAGwfOzjwUQuvyY8HiW4eJpWUi7makkaxYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFfFK8BYsJBWMwWL3qH4cBS7LNunCBdeL9Q2hTF0276Vx4yvV8UGbpCsEoIfbG/v/SLuZqSRrFixYsWLFixYsWK+BvR980rTJIHGICuAXlEFVG02OCrrA6bNuJMcljEICRnwF2HiWmsaczixuVOZqSRrFixYsWLFixYsWLFixYnGza+BxtaKdiFGjdpQIUVb/QEiH5XO+Onb0VKsaC2MLdtmIUaK+aovDKrNgi1UFSSNYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYnAAA/v/8RMAA5gstkA6Rd1PByijdgUGXGEqMaikFTCRV80hBUCzIUX2C4+p8kfSkz1NE5o1L0S2BiJtoXugr7lqogcqDnvmxD2DxJKPXwQXJkM4SIWhcjvSUV03w/e1neP4E51QZNTEsCPk1Z7Q7Ggwjkpd1Vy4xm1mWoN/HR90Zrvp4LdPZUHZ2WmpyrUeP6nKbcnJq4fGSblB7/rrORQIASB63kICX/14AcUsxuUiSyT4ytAT47lwt7BJGQ+NgsLg5qlJVvuzHWDceTZr92DRWfCCYp8VRdA0z7UXJd5bVJEZOShCnydkz3bJaf6dPQO1b0OxnSw/jhGCbufoOLGWQofZ9Tcp8eWhNXs6DAb5gZ9XhEUuJSG63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"
@@ -840,7 +848,10 @@
     <!-- Modal content -->
     <div class="modal-content">
       <span onclick="closeHelp()" class="close" id="close">&times;</span>
-      <h3>Help</h3>
+      <h3>How to use</h3>
+      <p>When used in combination with the Node server app, new photos will be opened automatically. Alternativly you
+        can drap-and-drop image files. To open a reference image for comparison <kbd>Ctrl</kbd> drag-and-drop the file.
+      </p>
       <ul>
         <li>
           <span class="material-icons">file_copy</span> Copy the active photo to the target folder.
@@ -1040,6 +1051,34 @@
     }
 
     // ------------------------------------------------
+
+    function dropHandler(event) {
+      event.preventDefault();
+      // event.dataTransfer.files or event.dataTransfer.items
+      /* for (var i = 0; i < event.dataTransfer.files.length; i++) {
+        console.log('file[' + i + '].name = ' + event.dataTransfer.files[i].name); 
+      } */
+      file = event.dataTransfer.files[0];
+      fileType = file.name.slice((file.name.lastIndexOf(".") - 1 >>> 0) + 2);
+      if ((fileType.toLowerCase() == "jpg") || fileType.toLowerCase() == "png" || fileType.toLowerCase() == "webp") {
+        let reader = new FileReader()
+        reader.readAsDataURL(file)
+        reader.onloadend = function () {
+          let img = document.createElement('img')
+          const ctrl = event.getModifierState("Control");
+          if (ctrl) {
+            document.getElementById("reference").src = reader.result;
+          } else {
+            document.getElementById("photo").src = reader.result;
+            $('#file-info').text(file.name);
+          }
+        }
+      }
+    }
+
+    function dragOverHandler(event) {
+      event.preventDefault();
+    }
 
     function toggleQuickSort() {
       $("#triage").toggleClass("hide");
