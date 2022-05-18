@@ -324,3 +324,11 @@ function getExtension(path) {
     return basename.slice(pos + 1);            // extract extension ignoring `.`
 }
 
+// check if watched folder is still available
+setInterval(function(){ 
+	if (!(fs.existsSync(sourceFolder))) {
+		console.log('Source location is not accesible!');
+		io.emit('missing sourcefolder',"");
+	}
+},10000) 
+
