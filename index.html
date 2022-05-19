@@ -56,12 +56,15 @@
         document.getElementById("reference").src = document.getElementById("photo").src;
       }
       document.getElementById("photo").src = msg;
+      $('.copy-file').removeClass("hide-menu-item");
+      $('.filename').removeClass("hide-menu-item");
       $("#triage").removeClass("done");
     });
     socket.on('new data', function (msg) {
       // console.log(msg);
       $('#exif').removeClass("hide-menu-item")
       document.getElementById("photo").title = msg.filename;
+      $("#filename-menu-item").attr("title", "Click to copy filename\n " + msg.filename);
       sourceFile = msg.source;
       targetFile = msg.target;
       $('#file-info').text(msg.filename);
@@ -75,13 +78,11 @@
             .flash);
           $('#file-info').show();
           document.getElementById("container").setAttribute('data-content', msg.filename);
-          document.getElementById("filename").innerText = shorten(msg.filename, maxItemLen);
-          document.getElementById("source").innerText = shorten(msg.source.substring(0, msg.source.lastIndexOf(
-              "\\")),
-            maxItemLen);
-          document.getElementById("target").innerText = shorten(msg.target.substring(0, msg.target.lastIndexOf(
-              "\\")),
-            maxItemLen);
+          document.getElementById("filename").innerText = msg.filename;
+          document.getElementById("source").innerText = msg.source.substring(0, msg.source.lastIndexOf(
+            "\\"));
+          document.getElementById("target").innerText = msg.target.substring(0, msg.target.lastIndexOf(
+            "\\"));
           document.getElementById("ISO").innerText = msg.ISO;
           document.getElementById("F").innerText = msg.F;
           document.getElementById("SS").innerText = msg.SS;
@@ -175,16 +176,18 @@
       showgrid = config.settings.showgrid;
       quicksort = config.settings.quicksort;
       previousReference = config.settings.previousreference;
-      document.getElementById("source").innerText = shorten(msg.source.substring(0, msg.source.lastIndexOf("\\")),
-        maxItemLen);
-      document.getElementById("target").innerText = shorten(msg.target.substring(0, msg.target.lastIndexOf("\\")),
-        maxItemLen);
-
+      document.getElementById("source").innerText = msg.source.substring(0, msg.source.lastIndexOf("\\"));
+      document.getElementById("target").innerText = msg.target.substring(0, msg.target.lastIndexOf("\\"));
+      $("#source-menu-item").attr("title", "Click to copy source folder\n " + msg.source.substring(0, msg.source
+        .lastIndexOf("\\")));
+      $("#target-menu-item").attr("title", "Click to copy target folder\n " + msg.target.substring(0, msg.target
+        .lastIndexOf("\\")));
       if (autocopy) {
         console.log("autocopy on");
         $('.copy-file').addClass("hide-menu-item");
       } else {
         console.log("autocopy off");
+        $('.copy-file').removeClass("hide-menu-item");
         $('.delete-copy').addClass("hide-menu-item");
       }
 
@@ -715,6 +718,16 @@
       display: none;
     }
 
+
+    .truncate {
+      display: inline-block;
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+
     /* ----------- */
     .gridlines {
       display: none;
@@ -733,7 +746,7 @@
     <div class="item delete-copy" onclick="deleteFromTarget();">
       <span class="material-icons">image</span> Delete Copy
     </div>
-    <div class="item warning" id="delete_original" title="Ctrl-click to delete">
+    <div class="item warning hide-menu-item" id="delete_original" title="Ctrl-click to delete">
       <span class="material-icons">sd_card</span> Delete Original
     </div>
     <hr />
@@ -756,14 +769,18 @@
       <span id="file_info" class="material-icons">text_snippet</span> Show/hide Info
     </div>
     <hr />
-    <div class="item clip" data-clipboard-target="#filename" title="Click to copy filename">
-      <span class="material-icons">description</span> <span id="filename">Filename</span>
+    <div class="item clip hide-menu-item filename" id="filename-menu-item" data-clipboard-target="#filename"
+      title="Click to copy filename">
+      <span class="material-icons">description</span>
+      <div class="truncate" id="filename">Filename</div>
     </div>
-    <div class="item clip" data-clipboard-target="#source" title="Click to copy source folder">
-      <span class="material-icons">photo_camera</span> <span id="source">Source Folder</span>
+    <div class="item clip" id="source-menu-item" data-clipboard-target="#source" title="Click to copy source folder">
+      <span class="material-icons">photo_camera</span>
+      <div class="truncate" id="source">Source Folder</div>
     </div>
-    <div class="item clip" data-clipboard-target="#target" title="Click to copy target folder">
-      <span class="material-icons">desktop_windows</span> <span id="target">Target Folder</span>
+    <div class="item clip" id="target-menu-item" data-clipboard-target="#target" title="Click to copy target folder">
+      <span class="material-icons">desktop_windows</span>
+      <div class="truncate" id="target">Target Folder</div>
     </div>
     <hr />
     <div class="item hide-menu-item" id="exif">
@@ -921,7 +938,7 @@
           </ul>
         </li>
         <li>
-          <span id="grid_toggle" class="material-icons">grid_off</span> Turn the grid on or off.
+          <span id="grid_toggle" class="material-icons">grid_on</span> Turn the grid on or off.
         </li>
         <li>
           <span id="grid_crosshair" class="material-icons">add</span> Turn the crosshair on or off.
@@ -951,7 +968,8 @@
           <span class="material-icons">desktop_windows</span> Click to copy the target folder to the clipboard.
         </li>
       </ul>
-      <p>To place a guide <kbd>Ctrl</kbd> + left-click the image. To clear all guides <kbd>Ctrl</kbd> + <kbd>Shift</kbd> +
+      <p>To place a guide <kbd>Ctrl</kbd> + left-click the image. To clear all guides <kbd>Ctrl</kbd> + <kbd>Shift</kbd>
+        +
         left-click the image.</p>
     </div>
 
@@ -1271,16 +1289,6 @@
 
       });
     });
-
-    function shorten(text, textLength) {
-      if (text.length > textLength) {
-        text = text.substring(0, textLength) + '...';
-      }
-      return text;
-    }
-
-
-
 
     function resizeActions() {
 
