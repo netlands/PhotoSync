@@ -70,3 +70,8 @@ I am far from a professional programmer. I made this for personal use and posted
 Copy functionallity is implemented using standard JavaScript filesystem functions, and although there is an option to delete files from the camera I strongly advise against this as it is always better to be safe than sorry when working with data. 
 
 The actual connection to your camera depends on the operating system or a third-party app so I suggest to check for any known issues before using.
+
+## To-do
+
+- Store guides between sessions
+- Add close (x) buttons to Zoom and Compare views
