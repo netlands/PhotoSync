@@ -58,7 +58,7 @@ You can update the configuration depending on your workflow. Options can be set 
 
     The options are non-destructive, since discarded photos are stored in a folder called trash that can later be deleted. 
 
-There are a few functions available in the right-click context menu to work with the files and make reviewing easier. The available options depend on the configuration.
+There are a few functions available in the right-click context menu to work with the files and make reviewing easier. The available options depend on the configuration. Press F1 to show the Help screen.
 
 ![How to use](./art/help.png)
 
