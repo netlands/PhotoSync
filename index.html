@@ -752,7 +752,14 @@
     .close-button .material-icons {
       font-size: 30px;
       color: #747474;
-      text-shadow: 1px 1px #d4d4d4c4;
+      display: inline-block;
+      border: 0px solid white;
+      border-radius: 50%;
+      background: rgba(184, 184, 184, 0.507);
+      width: 34px;
+      height: 34px;
+      text-align: center;
+      line-height: 34px;
     }
 
     /* ----------- */
@@ -951,6 +958,7 @@
       <p>When used in combination with the Node server app, new photos will be opened automatically. Alternatively you
         can drag-and-drop image files. To open a reference image for comparison <kbd>Ctrl</kbd> drag-and-drop the file.
       </p>
+      <p>Additional functionality can be accessed via the right-click context menu.</p>
       <ul>
         <li>
           <span class="material-icons">file_copy</span> Copy the active photo to the target folder.
@@ -971,7 +979,8 @@
           <span id="grid_crosshair" class="material-icons">add</span> Turn the crosshair on or off.
         </li>
         <li>
-          <span id="zoom_toggle" class="material-icons">zoom_in</span> Switch to Zoom view.
+          <span id="zoom_toggle" class="material-icons">zoom_in</span> Switch to Zoom view. You can also double-click
+          the image to zoom.
           <ul class="l2">
             <li>Use the mouse and scroll wheel to zoom and pan.</li>
           </ul>
@@ -1343,6 +1352,13 @@
 
     }
     window.onresize = resizeActions;
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "F1") {
+        showHelp();
+        e.preventDefault()
+      }
+    })
   </script>
 </body>
 
