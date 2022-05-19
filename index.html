@@ -56,6 +56,12 @@
         document.getElementById("reference").src = document.getElementById("photo").src;
       }
       document.getElementById("photo").src = msg;
+      if (showCompare) {
+        destroyCompare();
+      }
+      if (zoomActive) {
+        closeZoom();
+      }
       $('.copy-file').removeClass("hide-menu-item");
       $('.filename').removeClass("hide-menu-item");
       $("#triage").removeClass("done");
@@ -401,6 +407,12 @@
     }
 
     #container {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
       position: relative;
       display: grid;
       width: fit-content;
@@ -727,6 +739,21 @@
       text-overflow: ellipsis;
     }
 
+
+    .close-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      margin-top: 10px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .close-button .material-icons {
+      font-size: 30px;
+      color: #747474;
+      text-shadow: 1px 1px #d4d4d4c4;
+    }
 
     /* ----------- */
     .gridlines {
@@ -1124,6 +1151,15 @@
     }
 
     // ------------------------------------------------
+    dblClicked = false;
+    const container = document.querySelector('#container');
+    container.addEventListener('dblclick', function (e) {
+      dblClicked = true;
+      toggleZoom();
+    });
+
+
+
 
     function dropHandler(event) {
       event.preventDefault();
@@ -1178,13 +1214,13 @@
       $('#compare').remove();
       compare = undefined;
       delete compare;
+      $('#image').show();
       showCompare = false;
     }
 
     function createCompare() {
       console.log("create compare");
-      $("<div id='compare'></div>").insertBefore($("#image")); // $(".xxx").append('<div id="compare"></div>');
-
+      $("<div id='compare'></div>").insertBefore($("#image"));
       var compare
       options = {
         el: '#compare', // The container, required
@@ -1197,7 +1233,11 @@
       options.beforeImg = $('#photo').attr('src');
       options.afterImg = $('#reference').attr('src');
       compare = new SliderBar(options);
+      $('#image').hide();
       showCompare = true;
+
+      $("#compare").append(
+        '<div onclick="toggleCompare()" class="close-button"><span class="material-icons">close</span></div>')
     }
 
 
@@ -1206,10 +1246,8 @@
       console.log(showCompare);
       if (showCompare) {
         destroyCompare();
-        $('#image').show();
       } else {
         createCompare();
-        $('#image').hide();
       }
     }
 
@@ -1230,19 +1268,30 @@
       $('#zoom').attr("data-zoomist-src", $('#photo').attr('src'));
       zoom = new Zoomist("#zoom", options);
       document.getElementById("zoom_toggle").innerText = "zoom_out";
+      zoom.on('ready', function () {
+        if (dblClicked) {
+          zoom.zoom(0.1);
+          dblClicked = false;
+        }
+      })
+      document.getElementById('image').style.visibility = 'hidden';
       zoomActive = true;
+    }
+
+    function closeZoom() {
+      document.getElementById('image').style.visibility = 'visible';
+      zoom.reset();
+      zoom.destroy();
+      $('#zoom').remove();
+      document.getElementById("zoom_toggle").innerText = "zoom_in";
+      zoomActive = false;
     }
 
     function toggleZoom() {
       if (zoomActive) {
-        document.getElementById('image').style.visibility = 'visible';
-        zoom.destroy();
-        $('#zoom').remove();
-        document.getElementById("zoom_toggle").innerText = "zoom_in";
-        zoomActive = false;
+        closeZoom();
       } else {
         activateZoom();
-        document.getElementById('image').style.visibility = 'hidden';
       }
     }
 
