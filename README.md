@@ -60,7 +60,7 @@ You can update the configuration depending on your workflow. Options can be set 
 
 There are a few functions available in the right-click context menu to work with the files and make reviewing easier. The available options depend on the configuration.
 
-![Quick Sort Buttons](./art/help.png)
+![How to use](./art/help.png)
 
 
 ## Disclaimer
