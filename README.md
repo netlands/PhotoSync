@@ -74,4 +74,3 @@ The actual connection to your camera depends on the operating system or a third-
 ## To-do
 
 - Store guides between sessions
-- Add close (x) buttons to Zoom and Compare views
