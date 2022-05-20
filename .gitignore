@@ -129,3 +129,4 @@ dist
 # Local test data
 *.jpg
 config.local.json
+exif.txt

@@ -16,12 +16,14 @@ const fs = require('fs');
 
 // https://github.com/paulmillr/chokidar
 // https://github.com/gomfunkel/node-exif
+// camera specific exif https://exiftool.org/TagNames/Panasonic.html https://exiftool.org/TagNames/EXIF.html https://exiv2.org/tags-panasonic.html
 // https://stackabuse.com/executing-shell-commands-with-node-js/
 // https://stackoverflow.com/questions/7076958/read-exif-and-determine-if-the-flash-has-fired
 // https://stackoverflow.com/questions/23575218/convert-decimal-number-to-fraction-in-javascript-or-closest-fraction
 // https://socket.io/get-started/chat
 // https://expressjs.com/en/starter/static-files.html
 // https://www.base64-image.de/
+
 
 let rawdata = fs.readFileSync('config.json');
 let config = JSON.parse(rawdata);
@@ -240,13 +242,17 @@ function processFile(path) {
 				exif.ISO = "";
 				exif.EV = "";
 				exif.flash = "";
+				exif.mode = "";
 				io.emit('new data', exif);				
 			} else {
 				// console.log(exifData); // Do something with your data!
+				var path = require('path');
+				if (inspector.url() !== undefined) { fs.writeFileSync(path.join(targetFolder,"exif.txt"),JSON.stringify(exifData)); } //
 				exif.SS = fra_to_dec(exifData.exif.ExposureTime);
 				exif.F = exifData.exif.FNumber;
 				exif.ISO = exifData.exif.ISO;
 				exif.EV = exifData.exif.ExposureCompensation;
+				exif.mode = getMode(exifData.exif.ExposureProgram);
 				exif.flash = flashFired(exifData.exif.Flash);
 				io.emit('new data', exif);
 			}
@@ -258,6 +264,7 @@ function processFile(path) {
 			exif.ISO = "";
 			exif.EV = "";
 			exif.flash = "";
+			exif.mode = "";
 			io.emit('new data', exif);
 	}	
 
@@ -277,6 +284,30 @@ function processFile(path) {
 }	
 }
 
+function getMode(exifValue) {
+
+	/* 1 = Manual
+	2 = Program AE
+	3 = Aperture-priority AE
+	4 = Shutter speed priority AE */
+	switch (exifValue) {
+		case 1 :
+			mode = "M";
+			break;
+		case 2 :
+			mode = "iA";
+			break;
+		case 3 :
+			mode = "A";
+			break;
+		case 4 :
+			mode = "S";
+			break;							
+		default :
+			mode = exifValue;
+	}	
+	return mode;
+}
 
 function flashFired(exifValue) {
 	//check if the number is even

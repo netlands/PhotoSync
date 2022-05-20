@@ -17,8 +17,8 @@
   <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.5.0/dist/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
-  <!-- https://lokeshdhakar.com/projects/color-thief -->
-  <!-- https://stackoverflow.com/questions/3032856/is-it-possible-to-set-the-stacking-order-of-pseudo-elements-below-their-parent-e/9072467#9072467-->
+  <!-- get main color: https://lokeshdhakar.com/projects/color-thief -->
+  <!-- z-index of ::after https://stackoverflow.com/questions/3032856/is-it-possible-to-set-the-stacking-order-of-pseudo-elements-below-their-parent-e/9072467#9072467-->
   <script>
     var socket = io();
 
@@ -81,7 +81,7 @@
           $('#file-info').text("SS " + msg.SS + ", F " + msg.F + ", ISO " + msg.ISO + ", " + msg.EV +
             " EV, flash " +
             msg
-            .flash);
+            .flash); // + " " + msg.mode);
           $('#file-info').show();
           document.getElementById("container").setAttribute('data-content', msg.filename);
           document.getElementById("filename").innerText = msg.filename;
@@ -93,6 +93,7 @@
           document.getElementById("F").innerText = msg.F;
           document.getElementById("SS").innerText = msg.SS;
           document.getElementById("EV").innerText = msg.EV;
+          document.getElementById("mode").innerText = msg.mode;
           if (msg.flash.includes("not")) {
             document.getElementById("flash").innerText = "flash_off";
           } else {
@@ -541,6 +542,10 @@
       height: fit-content;
     }
 
+#mode {
+  font-weight: bold;
+}
+
     /* Group same frames together */
     @keyframes blink {
 
@@ -822,7 +827,7 @@
         <span class="material-icons">shutter_speed</span>SS <span id="SS"></span></div>
       <div><span class="material-icons">camera_roll</span>ISO <span id="ISO"></span>
         <span class="material-icons">iso</span><span id="EV"></span> EV
-        <span id="flash" class="material-icons">flash_on</span></div>
+        <span id="flash" class="material-icons">flash_on</span><span id="mode">flash_on</span></div>
     </div>
     <div class="item" title="Show help" onclick="showHelp();">
       <span class="material-icons">help_outline</span> <span id="target">Help</span>
