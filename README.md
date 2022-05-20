@@ -23,7 +23,7 @@ In order to access pictures on a camera's memory card, the camera needs to be co
 
 For the application to work the camera's memory needs to be "mounted" as a drive (USB Mass Storage mode), or you will need to map a drive letter to the camera "MTP device".
 
-I suggest using the MTPdrive (https://www.mtpdrive.com/) application for this purpose. You can use the free trial to test if it works for you.
+I suggest using the MTPdrive application (https://www.mtpdrive.com/) for this purpose. You can use the free trial to test if it works for you.
 
 MTPdrive can automate the process of mapping/assigning a dedicated drive letter to a connected MTP device and optionally start a specific application on connection. 
 
