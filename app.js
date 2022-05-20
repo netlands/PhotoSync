@@ -68,13 +68,13 @@ app.get('/', (req, res) => {
 	// res.send('<h1>Hello world</h1>');
 	res.sendFile(__dirname + '/index.html');
   });
-  
+
   app.get('/test/', (req, res) => {
 	res.sendFile(__dirname + '/test/test.html');
   });
-  
+
   server.listen(3000, () => {
-    console.log('listening on http://localhost:3000 and http://' + getServerIp() + ":3000" );
+	console.log('listening on http://localhost:3000 and http://' + getServerIp() + ":3000" );
   });
 
   function getServerIp() {
@@ -116,7 +116,7 @@ app.get('/', (req, res) => {
 		console.log('deleted file: ' + targetFile);
 	  })
   });
-  
+
   socket.on('delete camera', (msg) => {
 	fs.unlink(sourceFile, (err) => {
 		if (err) {
@@ -124,7 +124,7 @@ app.get('/', (req, res) => {
 		  return
 		}
 		console.log('deleted file: ' + sourceFile);
-	  }) 
+	  })
   });
 
   socket.on('copy source', (msg) => {
@@ -145,8 +145,8 @@ app.get('/', (req, res) => {
 		case "star" :
 			console.log("sort action: " + msg);
 			msg = "starred"; // for folder name
-			break;			
-		default :		
+			break;
+		default :
 	}
 
 	if (!(fs.existsSync(path.join(targetFolder, msg)))) {
@@ -160,10 +160,10 @@ app.get('/', (req, res) => {
 		// MOVE copy
 		fs.renameSync(targetFile, path.join(targetFolder, msg, filename))
 	}
-	
-		
-  }); 
-  
+
+
+  });
+
 });
 
 
@@ -172,7 +172,7 @@ app.get('/', (req, res) => {
 
 	if (event == "add") {
 		processFile(path);
-	}	
+	}
 });*/
 
 var watcher = chokidar.watch(sourceFolder, {
@@ -188,12 +188,12 @@ console.log("autocopy: " + autoCopy );
 var sourceFile, targetFile, filename;
 
 watcher
-      .on('change',  function(path) { console.log(" ~ File " + path + " has been changed"); })
-      .on('add',  function(path) { console.log(" + File " + path + " has been added"); processFile(path); })
+	  .on('change',  function(path) { console.log(" ~ File " + path + " has been changed"); })
+	  .on('add',  function(path) { console.log(" + File " + path + " has been added"); processFile(path); })
 	  .on('unlink',  function(path) { console.log(" - File " + path + " has been deleted"); });
 	  // add, change, unlink, addDir, unlinkDir
 
-	  
+
 function processFile(path) {
 
 	sourceFile = path;
@@ -213,12 +213,12 @@ function processFile(path) {
 	  console.log(path + ' was copied to destination');
 	});*/
 	
-	var imageAsBase64 			
+	var imageAsBase64
 	
-	if (autoCopy) { 
-		fs.copyFileSync(path, target); 		
+	if (autoCopy) {
+		fs.copyFileSync(path, target);
 	} else {
-		target = path;	
+		target = path;
 	}
 
 	var sourceType = "jpeg";
@@ -243,7 +243,7 @@ function processFile(path) {
 				exif.EV = "";
 				exif.flash = "";
 				exif.mode = "";
-				io.emit('new data', exif);				
+				io.emit('new data', exif);
 			} else {
 				// console.log(exifData); // Do something with your data!
 				var path = require('path');
@@ -266,7 +266,7 @@ function processFile(path) {
 			exif.flash = "";
 			exif.mode = "";
 			io.emit('new data', exif);
-	}	
+	}
 
 
 	/* exec("notepad.exe " + target, 1, (error, stdout, stderr) => {
@@ -280,8 +280,8 @@ function processFile(path) {
 		}
 		console.log(`stdout: ${stdout}`); 
 	}); */
-	
-}	
+
+}
 }
 
 function getMode(exifValue) {
@@ -302,10 +302,10 @@ function getMode(exifValue) {
 			break;
 		case 4 :
 			mode = "S";
-			break;							
+			break;
 		default :
 			mode = exifValue;
-	}	
+	}
 	return mode;
 }
 
@@ -318,48 +318,57 @@ function flashFired(exifValue) {
 	// if the number is odd
 	else {
 		return("fired");
-	}	
+	}
 }	
 
 
 function fra_to_dec(value){
 	num = value;
-    var test=(String(num).split('.')[1] || []).length;
-    var num=(num*(10**Number(test)))
-    var den=(10**Number(test))
-    function reduce(numerator,denominator){
-        var gcd = function gcd(a,b) {
-            return b ? gcd(b, a%b) : a;
-        };
-        gcd = gcd(numerator,denominator);
-        return [numerator/gcd, denominator/gcd];
-    }
+	var test=(String(num).split('.')[1] || []).length;
+	var num=(num*(10**Number(test)))
+	var den=(10**Number(test))
+	function reduce(numerator,denominator){
+		var gcd = function gcd(a,b) {
+			return b ? gcd(b, a%b) : a;
+		};
+		gcd = gcd(numerator,denominator);
+		return [numerator/gcd, denominator/gcd];
+	}
 	if (reduce(num,den)[0] == "1") {
 		return (reduce(num,den)[0]+"/"+reduce(num,den)[1])
 	} else {
 		return(Math.round(value * 1000) / 1000)
 	}
-    
+
 }
 
 
 // https://stackoverflow.com/questions/190852/how-can-i-get-file-extensions-with-javascript
 function getExtension(path) {
-    var basename = path.split(/[\\/]/).pop(),  // extract file name from full path ...
-                                               // (supports `\\` and `/` separators)
-        pos = basename.lastIndexOf(".");       // get last position of `.`
+	var basename = path.split(/[\\/]/).pop(),  // extract file name from full path ...
+				                               // (supports `\\` and `/` separators)
+		pos = basename.lastIndexOf(".");       // get last position of `.`
 
-    if (basename === "" || pos < 1)            // if file name is empty or ...
-        return "";                             //  `.` not found (-1) or comes first (0)
+	if (basename === "" || pos < 1)            // if file name is empty or ...
+		return "";                             //  `.` not found (-1) or comes first (0)
 
-    return basename.slice(pos + 1);            // extract extension ignoring `.`
+	return basename.slice(pos + 1);            // extract extension ignoring `.`
 }
+
+var folderMissing = false;
 
 // check if watched folder is still available
 setInterval(function(){ 
 	if (!(fs.existsSync(sourceFolder))) {
-		console.log('Source location is not accesible!');
+		if (!(folderMissing)) { console.log('Source location is not accesible!'); }
 		io.emit('missing sourcefolder',"");
+		folderMissing = true;
+	} else {
+		if (folderMissing) {
+			folderMissing = false;
+			console.log('Source location is available!');
+			io.emit('folder is back',"");
+		}	
 	}
 },10000) 
 

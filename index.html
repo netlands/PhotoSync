@@ -43,6 +43,17 @@
       $('#file-info').html('<span class="dot warning"></span>Connection Lost. Check server and device');
     })
 
+    socket.on('missing sourcefolder', function () {
+      // Houston, we have a problem ...
+      console.log("Source folder missing");
+      $('#file-info').html('<span class="dot warning"></span>Problem with source folder. Check device');
+    })
+
+    socket.on('folder is back', function () {
+      $('#file-info').html('<span class="dot"></span>Connected to server');
+      socket.emit('getconfig', "hi there!")
+    });
+
 
     socket.on('connect', function () {
       console.log("Connected to watcher");
@@ -331,10 +342,12 @@
       var mainColor = colorThief.getColor(img);
       if (lightOrDark(rgbToHex(mainColor[0], mainColor[1], mainColor[2])) == "dark") {
         console.log("dark");
-        $(".hair").addClass("light")
+        $(".hair").addClass("light");
+        $("#image").removeClass("dark")
       } else {
         console.log("light");
-        $(".hair").removeClass("light")
+        $(".hair").removeClass("light");
+        $("#image").addClass("dark")
       };
     }
 
@@ -473,6 +486,23 @@
     .grid::after {
       transform: rotate(90deg);
     }
+
+    .grid.dark::before,
+    .grid.dark::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, rgb(65, 65, 65) 1px, transparent 1px);
+      background-size: 10%;
+    }
+
+    .grid.dark::before {
+      box-shadow: inset 0px 0px 0 1px rgb(65, 65, 65);
+    }
+
 
     .slider-container .slider-wrap .slider-btn {
       width: 1px;
