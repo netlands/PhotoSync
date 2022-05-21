@@ -17,8 +17,8 @@
   <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.5.0/dist/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
-  <!-- https://lokeshdhakar.com/projects/color-thief -->
-  <!-- https://stackoverflow.com/questions/3032856/is-it-possible-to-set-the-stacking-order-of-pseudo-elements-below-their-parent-e/9072467#9072467-->
+  <!-- get main color: https://lokeshdhakar.com/projects/color-thief -->
+  <!-- z-index of ::after https://stackoverflow.com/questions/3032856/is-it-possible-to-set-the-stacking-order-of-pseudo-elements-below-their-parent-e/9072467#9072467-->
   <script>
     var socket = io();
 
@@ -43,6 +43,17 @@
       $('#file-info').html('<span class="dot warning"></span>Connection Lost. Check server and device');
     })
 
+    socket.on('missing sourcefolder', function () {
+      // Houston, we have a problem ...
+      console.log("Source folder missing");
+      $('#file-info').html('<span class="dot warning"></span>Problem with source folder. Check device');
+    })
+
+    socket.on('folder is back', function () {
+      $('#file-info').html('<span class="dot"></span>Connected to server');
+      socket.emit('getconfig', "hi there!")
+    });
+
 
     socket.on('connect', function () {
       console.log("Connected to watcher");
@@ -56,6 +67,12 @@
         document.getElementById("reference").src = document.getElementById("photo").src;
       }
       document.getElementById("photo").src = msg;
+      if (showCompare) {
+        destroyCompare();
+      }
+      if (zoomActive) {
+        closeZoom();
+      }
       $('.copy-file').removeClass("hide-menu-item");
       $('.filename').removeClass("hide-menu-item");
       $("#triage").removeClass("done");
@@ -75,7 +92,7 @@
           $('#file-info').text("SS " + msg.SS + ", F " + msg.F + ", ISO " + msg.ISO + ", " + msg.EV +
             " EV, flash " +
             msg
-            .flash);
+            .flash); // + " " + msg.mode);
           $('#file-info').show();
           document.getElementById("container").setAttribute('data-content', msg.filename);
           document.getElementById("filename").innerText = msg.filename;
@@ -87,6 +104,7 @@
           document.getElementById("F").innerText = msg.F;
           document.getElementById("SS").innerText = msg.SS;
           document.getElementById("EV").innerText = msg.EV;
+          document.getElementById("mode").innerText = msg.mode;
           if (msg.flash.includes("not")) {
             document.getElementById("flash").innerText = "flash_off";
           } else {
@@ -324,10 +342,12 @@
       var mainColor = colorThief.getColor(img);
       if (lightOrDark(rgbToHex(mainColor[0], mainColor[1], mainColor[2])) == "dark") {
         console.log("dark");
-        $(".hair").addClass("light")
+        $(".hair").addClass("light");
+        $("#image").removeClass("dark")
       } else {
         console.log("light");
-        $(".hair").removeClass("light")
+        $(".hair").removeClass("light");
+        $("#image").addClass("dark")
       };
     }
 
@@ -401,6 +421,12 @@
     }
 
     #container {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
       position: relative;
       display: grid;
       width: fit-content;
@@ -460,6 +486,23 @@
     .grid::after {
       transform: rotate(90deg);
     }
+
+    .grid.dark::before,
+    .grid.dark::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(to right, rgb(65, 65, 65) 1px, transparent 1px);
+      background-size: 10%;
+    }
+
+    .grid.dark::before {
+      box-shadow: inset 0px 0px 0 1px rgb(65, 65, 65);
+    }
+
 
     .slider-container .slider-wrap .slider-btn {
       width: 1px;
@@ -528,6 +571,10 @@
       width: fit-content;
       height: fit-content;
     }
+
+#mode {
+  font-weight: bold;
+}
 
     /* Group same frames together */
     @keyframes blink {
@@ -728,6 +775,28 @@
     }
 
 
+    .close-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      margin-top: 10px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .close-button .material-icons {
+      font-size: 30px;
+      color: #747474;
+      display: inline-block;
+      border: 0px solid white;
+      border-radius: 50%;
+      background: rgba(184, 184, 184, 0.507);
+      width: 34px;
+      height: 34px;
+      text-align: center;
+      line-height: 34px;
+    }
+
     /* ----------- */
     .gridlines {
       display: none;
@@ -788,7 +857,7 @@
         <span class="material-icons">shutter_speed</span>SS <span id="SS"></span></div>
       <div><span class="material-icons">camera_roll</span>ISO <span id="ISO"></span>
         <span class="material-icons">iso</span><span id="EV"></span> EV
-        <span id="flash" class="material-icons">flash_on</span></div>
+        <span id="flash" class="material-icons">flash_on</span><span id="mode">flash_on</span></div>
     </div>
     <div class="item" title="Show help" onclick="showHelp();">
       <span class="material-icons">help_outline</span> <span id="target">Help</span>
@@ -826,7 +895,7 @@
         /* Stay in place */
         z-index: 10;
         /* Sit on top */
-        padding-top: 50px;
+        padding-top: 30px;
         /* Location of the box */
         left: 0;
         top: 0;
@@ -924,6 +993,7 @@
       <p>When used in combination with the Node server app, new photos will be opened automatically. Alternatively you
         can drag-and-drop image files. To open a reference image for comparison <kbd>Ctrl</kbd> drag-and-drop the file.
       </p>
+      <p>Additional functionality can be accessed via the right-click context menu.</p>
       <ul>
         <li>
           <span class="material-icons">file_copy</span> Copy the active photo to the target folder.
@@ -944,7 +1014,8 @@
           <span id="grid_crosshair" class="material-icons">add</span> Turn the crosshair on or off.
         </li>
         <li>
-          <span id="zoom_toggle" class="material-icons">zoom_in</span> Switch to Zoom view.
+          <span id="zoom_toggle" class="material-icons">zoom_in</span> Switch to Zoom view. You can also double-click
+          the image to zoom.
           <ul class="l2">
             <li>Use the mouse and scroll wheel to zoom and pan.</li>
           </ul>
@@ -1124,6 +1195,15 @@
     }
 
     // ------------------------------------------------
+    dblClicked = false;
+    const container = document.querySelector('#container');
+    container.addEventListener('dblclick', function (e) {
+      dblClicked = true;
+      toggleZoom();
+    });
+
+
+
 
     function dropHandler(event) {
       event.preventDefault();
@@ -1178,13 +1258,13 @@
       $('#compare').remove();
       compare = undefined;
       delete compare;
+      $('#image').show();
       showCompare = false;
     }
 
     function createCompare() {
       console.log("create compare");
-      $("<div id='compare'></div>").insertBefore($("#image")); // $(".xxx").append('<div id="compare"></div>');
-
+      $("<div id='compare'></div>").insertBefore($("#image"));
       var compare
       options = {
         el: '#compare', // The container, required
@@ -1197,7 +1277,11 @@
       options.beforeImg = $('#photo').attr('src');
       options.afterImg = $('#reference').attr('src');
       compare = new SliderBar(options);
+      $('#image').hide();
       showCompare = true;
+
+      $("#compare").append(
+        '<div onclick="toggleCompare()" class="close-button"><span class="material-icons">close</span></div>')
     }
 
 
@@ -1206,10 +1290,8 @@
       console.log(showCompare);
       if (showCompare) {
         destroyCompare();
-        $('#image').show();
       } else {
         createCompare();
-        $('#image').hide();
       }
     }
 
@@ -1230,19 +1312,30 @@
       $('#zoom').attr("data-zoomist-src", $('#photo').attr('src'));
       zoom = new Zoomist("#zoom", options);
       document.getElementById("zoom_toggle").innerText = "zoom_out";
+      zoom.on('ready', function () {
+        if (dblClicked) {
+          zoom.zoom(0.1);
+          dblClicked = false;
+        }
+      })
+      document.getElementById('image').style.visibility = 'hidden';
       zoomActive = true;
+    }
+
+    function closeZoom() {
+      document.getElementById('image').style.visibility = 'visible';
+      zoom.reset();
+      zoom.destroy();
+      $('#zoom').remove();
+      document.getElementById("zoom_toggle").innerText = "zoom_in";
+      zoomActive = false;
     }
 
     function toggleZoom() {
       if (zoomActive) {
-        document.getElementById('image').style.visibility = 'visible';
-        zoom.destroy();
-        $('#zoom').remove();
-        document.getElementById("zoom_toggle").innerText = "zoom_in";
-        zoomActive = false;
+        closeZoom();
       } else {
         activateZoom();
-        document.getElementById('image').style.visibility = 'hidden';
       }
     }
 
@@ -1294,6 +1387,13 @@
 
     }
     window.onresize = resizeActions;
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "F1") {
+        showHelp();
+        e.preventDefault()
+      }
+    })
   </script>
 </body>
 

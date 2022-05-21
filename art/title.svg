@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1000"
+   height="1000"
+   viewBox="0 0 264.583 264.583"
+   version="1.1"
+   id="svg16"
+   sodipodi:docname="title-min.svg"
+   inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs20" />
+  <sodipodi:namedview
+     id="namedview18"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="0.832"
+     inkscape:cx="499.39904"
+     inkscape:cy="308.29327"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="1912"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg16" />
+  <path
+     style="opacity:.995;fill:#000;fill-rule:evenodd;stroke-width:.264584;stroke-linecap:square;stroke-opacity:.5"
+     d="M0 0h264.583v264.583H0z"
+     id="path2" />
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:16.9333px;line-height:1.56;font-family:consolas;-inkscape-font-specification:'consolas, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:17.2773px;fill:#fff;stroke-width:.264583"
+     x="8.467"
+     y="18.785"
+     id="text6"><desc
+       id="desc3911">consolas, regular, 48pt, 1.56 lines, 65.30</desc><tspan
+       x="8.467"
+       y="71.617"
+       id="tspan4">SYNC</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:16.9333px;line-height:1.56;font-family:consolas;-inkscape-font-specification:'consolas, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:17.2773px;fill:#fff;stroke-width:.264583"
+     x="8.467"
+     y="18.785"
+     id="text10"><desc
+       id="desc3153">consolas, regular, 48pt, 1.56 lines, 65.30</desc><tspan
+       x="8.467"
+       y="45.201"
+       id="tspan8">PHOTO</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-style:normal;font-variant:normal;font-weight:400;font-stretch:normal;font-size:16.9333px;line-height:1.56;font-family:consolas;-inkscape-font-specification:'consolas, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;letter-spacing:17.2773px;fill:#fff;stroke-width:.264583"
+     x="8.202"
+     y="18.256"
+     id="text14"><desc
+       id="desc2131">consolas, regular, 48pt, 1.56 lines, 65.30</desc><tspan
+       x="8.202"
+       y="18.256"
+       id="tspan12">SIMPLE</tspan></text>
+</svg>
