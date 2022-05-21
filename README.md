@@ -73,3 +73,4 @@ The actual connection to your camera depends on the operating system or a third-
 ## To-do
 
 - Store guides between sessions
+- Make UI in zoom and compare view identical
