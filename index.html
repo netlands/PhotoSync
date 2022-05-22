@@ -593,13 +593,14 @@
       color: white;
       background: rgba(0, 0, 0, 0.5);
     }
-    /* rgba(0, 128, 0, 0.5); */
+    /* green rgba(0, 128, 0, 0.5); */
 
     #file-info.ng {
       color: red;
-      background: rgba(255, 0, 0, 0.25);
+      background: rgba(0, 0, 0, 0.5);
     }
-
+    /* red rgba(255, 0, 0, 0.25) */
+	
 #mode {
   font-weight: bold;
 }
@@ -810,6 +811,7 @@
       margin-top: 10px;
       margin-right: 10px;
       cursor: pointer;
+      z-index: 99;
     }
 
     .close-button .material-icons {
@@ -1334,8 +1336,12 @@
       options = {
         fill: "cover",
         height: '100%',
-        slider: false,
-        zoomer: true
+        // slider: true,
+        slider: {
+          el: '.custom-slider',
+          direction: 'vertical'
+        },
+        zoomer: false
       }
 
       $("<div id='zoom'></div>").insertBefore($("#image"));
@@ -1351,6 +1357,10 @@
       })
       document.getElementById('image').style.visibility = 'hidden';
       zoomActive = true;
+
+      $("#zoom").append(
+        '<div onclick="closeZoom()" class="close-button"><span class="material-icons">close</span></div>')
+
     }
 
     function closeZoom() {
