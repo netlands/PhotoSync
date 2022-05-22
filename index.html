@@ -22,6 +22,9 @@
   <script>
     var socket = io();
 
+    var splashScreen = true;
+    var showWarning = false;
+
     var sourceFile, targetFile;
     var firstFile = true;
 
@@ -41,24 +44,31 @@
       // Houston, we have a problem ...
       console.log("Lost connection to watcher");
       $('#file-info').html('<span class="dot warning"></span>Connection Lost. Check server and device');
+      $('#file-info').addClass("ng");
+      showWarning = true;
     })
 
     socket.on('missing sourcefolder', function () {
       // Houston, we have a problem ...
       console.log("Source folder missing");
       $('#file-info').html('<span class="dot warning"></span>Problem with source folder. Check device');
+      $('#file-info').addClass("ng");
+      showWarning = true;
     })
 
     socket.on('folder is back', function () {
       $('#file-info').html('<span class="dot"></span>Connected to server');
-      socket.emit('getconfig', "hi there!")
+      $('#file-info').addClass("ok");
+      socket.emit('getconfig', "hi there!");
+      showWarning = false;
     });
 
 
     socket.on('connect', function () {
       console.log("Connected to watcher");
       $('#file-info').html('<span class="dot"></span>Connected to server');
-      socket.emit('getconfig', "hi there!")
+      $('#file-info').addClass("ok");
+      socket.emit('getconfig', "hi there!");
     });
 
     socket.on('new photo', function (msg) {
@@ -66,6 +76,10 @@
       if (previousReference) {
         document.getElementById("reference").src = document.getElementById("photo").src;
       }
+      splashScreen = false;
+      $('#file-info').removeClass("ok");
+      $('#file-info').removeClass("ng");
+      showWarning = false;
       document.getElementById("photo").src = msg;
       if (showCompare) {
         destroyCompare();
@@ -189,6 +203,8 @@
       targetfolder = config.target;
       sourcefolder = config.source;
       $('#file-info').html('<span class="dot"></span>Watching folder ' + sourcefolder);
+      $('#file-info').removeClass("ng");
+      $('#file-info').addClass("ok");
       extenstion = config.extension;
       autocopy = config.settings.autocopy;
       showgrid = config.settings.showgrid;
@@ -264,11 +280,12 @@
 
       $("#container").mouseleave(function () {
         $(".hair").hide();
-        $("#file-info").hide();
+        if ((!splashScreen) || (!showWarning)) { $("#file-info").hide(); }
         if (hideGridOnMouseOver && showgrid) {
           $("#image").addClass("grid");
         }
       });
+
       $("#container").mouseenter(function () {
         if (showCrosshair) {
           $(".hair").show();
@@ -570,6 +587,16 @@
       left: 0;
       width: fit-content;
       height: fit-content;
+    }
+
+    #file-info.ok {
+      color: white;
+      background: rgba(0, 128, 0, 0.5);
+    }
+
+    #file-info.ng {
+      color: red;
+      background: rgba(255, 0, 0, 0.25);
     }
 
 #mode {
@@ -1225,6 +1252,9 @@
           } else {
             document.getElementById("photo").src = reader.result;
             $('#file-info').text(file.name);
+            $('#file-info').removeClass("ok");
+            $('#file-info').removeClass("ng");
+            splashScreen = false;
           }
         }
       }
