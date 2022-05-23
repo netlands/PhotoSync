@@ -25,7 +25,7 @@
     var splashScreen = true;
     var showWarning = false;
 
-    var sourceFile, targetFile;
+    var sourceFile, targetFile, filename;
     var firstFile = true;
 
     var maxItemLen = 20;
@@ -98,6 +98,7 @@
       $("#filename-menu-item").attr("title", "Click to copy filename\n " + msg.filename);
       sourceFile = msg.source;
       targetFile = msg.target;
+      filename = msg.filename;
       $('#file-info').text(msg.filename);
       if ((msg.ISO == null) || (msg.ISO == "")) {
         //
@@ -280,7 +281,9 @@
 
       $("#container").mouseleave(function () {
         $(".hair").hide();
-        if ((!splashScreen) || (!showWarning)) { $("#file-info").hide(); }
+        if ((!splashScreen) || (!showWarning)) {
+          $("#file-info").hide();
+        }
         if (hideGridOnMouseOver && showgrid) {
           $("#image").addClass("grid");
         }
@@ -593,17 +596,19 @@
       color: white;
       background: rgba(0, 0, 0, 0.5);
     }
+
     /* green rgba(0, 128, 0, 0.5); */
 
     #file-info.ng {
       color: red;
       background: rgba(0, 0, 0, 0.5);
     }
+
     /* red rgba(255, 0, 0, 0.25) */
-	
-#mode {
-  font-weight: bold;
-}
+
+    #mode {
+      font-weight: bold;
+    }
 
     /* Group same frames together */
     @keyframes blink {
@@ -827,6 +832,17 @@
       line-height: 34px;
     }
 
+    .zoomist-slider {
+      position: absolute;
+      z-index: 2;
+      top: 25%;
+      left: 0;
+      background-color: rgba(255, 255, 255, 0.8);
+      border-radius: 0 5px 5px 0;
+    }
+
+
+
     /* ----------- */
     .gridlines {
       display: none;
@@ -843,10 +859,13 @@
     </div>
     <hr class="copy-file" />
     <div class="item delete-copy" onclick="deleteFromTarget();">
-      <span class="material-icons">image</span> Delete Copy
+      <span class="material-icons">delete</span> Delete Copy
     </div>
     <div class="item warning hide-menu-item" id="delete_original" title="Ctrl-click to delete">
       <span class="material-icons">sd_card</span> Delete Original
+    </div>
+    <div class="item save-file" id="save_file" title="Save the current file" onclick="saveFile();">
+      <span class="material-icons">save</span> Save current file
     </div>
     <hr />
     <div class="item" onclick="toggleGrid();">
@@ -870,7 +889,7 @@
     <hr />
     <div class="item clip hide-menu-item filename" id="filename-menu-item" data-clipboard-target="#filename"
       title="Click to copy filename">
-      <span class="material-icons">description</span>
+      <span class="material-icons">image</span>
       <div class="truncate" id="filename">Filename</div>
     </div>
     <div class="item clip" id="source-menu-item" data-clipboard-target="#source" title="Click to copy source folder">
@@ -1029,13 +1048,16 @@
           <span class="material-icons">file_copy</span> Copy the active photo to the target folder.
         </li>
         <li>
-          <span class="material-icons">image</span> Delete the copy of the photo from the target folder.
+          <span class="material-icons">delete</span> Delete the copy of the photo from the target folder.
         </li>
         <li>
           <span class="material-icons">sd_card</span> Delete the <em>original photo</em> from the camera.
           <ul class="l2">
             <li>To delete <kbd>Ctrl</kbd> + left-click. <em>Warning!</em> Use at your own risk.</li>
           </ul>
+        </li>
+        <li>
+          <span class="material-icons">save</span> Save the currently displayed file to disk.
         </li>
         <li>
           <span id="grid_toggle" class="material-icons">grid_on</span> Turn the grid on or off.
@@ -1060,13 +1082,11 @@
           <span id="file_info" class="material-icons">text_snippet</span> Show/hide the Info area.
         </li>
         <li>
-          <span class="material-icons">description</span> Click to copy the filename to the clipboard.
+          <span class="material-icons">image</span> Click to copy the filename to the clipboard.
         </li>
         <li>
-          <span class="material-icons">photo_camera</span> Click to copy the source folder to the clipboard.
-        </li>
-        <li>
-          <span class="material-icons">desktop_windows</span> Click to copy the target folder to the clipboard.
+          <span class="material-icons">photo_camera</span> Click to copy the source or &nbsp;<span
+            class="material-icons">desktop_windows</span> folder to the clipboard.
         </li>
       </ul>
       <p>To place a guide <kbd>Ctrl</kbd> + left-click the image. To clear all guides <kbd>Ctrl</kbd> + <kbd>Shift</kbd>
@@ -1229,9 +1249,29 @@
     const container = document.querySelector('#container');
     container.addEventListener('dblclick', function (e) {
       dblClicked = true;
-      toggleZoom();
+      if (!showCompare) {
+        toggleZoom();
+      }
     });
 
+
+    function saveFile() {
+      console.log(filename);
+      downloadBase64File(document.getElementById("photo").src, filename)
+    }
+
+
+    function downloadBase64File(base64data, filename) {
+      // var base64data = dataurl.replace(/^data:image\/(svg|png|jpg|jpeg|tiff|gif);base64,/, "");
+      linkSource = base64data;
+      const downloadLink = document.createElement('a');
+      document.body.appendChild(downloadLink);
+
+      downloadLink.href = linkSource;
+      downloadLink.target = '_self';
+      downloadLink.download = filename;
+      downloadLink.click();
+    }
 
 
 
@@ -1243,7 +1283,8 @@
       } */
       file = event.dataTransfer.files[0];
       fileType = file.name.slice((file.name.lastIndexOf(".") - 1 >>> 0) + 2);
-      if ((fileType.toLowerCase() == "jpg") || fileType.toLowerCase() == "png" || fileType.toLowerCase() == "webp" || fileType.toLowerCase() == "svg") {
+      if ((fileType.toLowerCase() == "jpg") || fileType.toLowerCase() == "png" || fileType.toLowerCase() == "webp" ||
+        fileType.toLowerCase() == "svg") {
         let reader = new FileReader()
         reader.readAsDataURL(file)
         reader.onloadend = function () {
@@ -1255,6 +1296,7 @@
           } else {
             document.getElementById("photo").src = reader.result;
             $('#file-info').text(file.name);
+            filename = file.name;
             $('#file-info').removeClass("ok");
             $('#file-info').removeClass("ng");
             splashScreen = false;
@@ -1296,6 +1338,9 @@
     }
 
     function createCompare() {
+      if (zoomActive) {
+        closeZoom()
+      };
       console.log("create compare");
       $("<div id='compare'></div>").insertBefore($("#image"));
       var compare
@@ -1332,6 +1377,9 @@
     var zoom;
 
     function activateZoom() {
+      if (showCompare) {
+        destroyCompare()
+      };
       console.log("zooom on!")
       options = {
         fill: "cover",
