@@ -821,11 +821,11 @@
 
     .close-button .material-icons {
       font-size: 30px;
-      color: #747474;
+      color: #aaa;
       display: inline-block;
       border: 0px solid white;
       border-radius: 50%;
-      background: rgba(184, 184, 184, 0.507);
+      background: rgba(255, 255, 255, 0.8);
       width: 34px;
       height: 34px;
       text-align: center;
@@ -839,9 +839,24 @@
       left: 0;
       background-color: rgba(255, 255, 255, 0.8);
       border-radius: 0 5px 5px 0;
+      cursor: pointer;
     }
 
+    .zoomist-slider-bar {
+      background-color: #aaa;
+    }
 
+    .zoomist-slider-button {
+      cursor: pointer;
+    }
+
+    .cursorPan{
+      cursor: move;
+    }
+
+    cursorNone{
+      cursor: none;
+    }
 
     /* ----------- */
     .gridlines {
@@ -849,6 +864,10 @@
       position: absolute;
       background-color: #ccc;
     }
+
+
+
+
   </style>
 </head>
 
@@ -1210,6 +1229,7 @@
       onClick="toggleQuickSort()">Toggle Quick Sort</button> <button class="btn" onClick="showHelp()">Help</button>
   </span>
   <script>
+
     function createGrid() {
       // https://jsfiddle.net/madstop/bM5Kr/
       width = document.getElementById("container").offsetWidth + 1;
@@ -1432,9 +1452,11 @@
     function toggleCrosshair() {
       if (showCrosshair) {
         $('.hair').addClass("hide");
+        $('#container').removeClass("cursorNone");
         showCrosshair = false;
       } else {
         $('.hair').removeClass("hide");
+        $('#container').addClass("cursorNone");
         showCrosshair = true;
       }
     }
