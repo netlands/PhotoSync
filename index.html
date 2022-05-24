@@ -850,13 +850,6 @@
       cursor: pointer;
     }
 
-    .cursorPan{
-      cursor: move;
-    }
-
-    cursorNone{
-      cursor: none;
-    }
 
     /* ----------- */
     .gridlines {
@@ -1452,11 +1445,9 @@
     function toggleCrosshair() {
       if (showCrosshair) {
         $('.hair').addClass("hide");
-        $('#container').removeClass("cursorNone");
         showCrosshair = false;
       } else {
         $('.hair').removeClass("hide");
-        $('#container').addClass("cursorNone");
         showCrosshair = true;
       }
     }
