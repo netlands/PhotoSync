@@ -6,16 +6,17 @@ const {
 const path = require('path');
 
 
-// Menu.setApplicationMenu(false);
+Menu.setApplicationMenu(false);
 
 function createWindow () {
   const mainWindow = new BrowserWindow({
-    width: 968,
-    height: 1000,
-    minWidth: 968,
-    minHeight: 1000,
+    width: 960,
+    height: 980,
+    minWidth: 960,
+    minHeight: 980,
     backgroundColor: "black",
     resizable: true,
+    icon: __dirname + '/camera.ico',
     webPreferences: {
         preload: path.join(__dirname, 'app.js')
     }    
