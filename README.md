@@ -82,6 +82,8 @@ Copy functionality is implemented using standard JavaScript filesystem functions
 
 The actual connection to your camera depends on the operating system or a third-party app so I suggest to check for any known issues before using.
 
+I have included links to code I have used in the comments.
+
 ## To-do
 
 - Store guides between sessions
