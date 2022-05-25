@@ -61,7 +61,7 @@ There are a few functions available in the right-click context menu to work with
 
 ![How to use](./art/help.png)
 
-## Create an executable using Electron
+## Optional: Create an executable using Electron
 Install **Electron** and **Electron Packager** 
 
     npm install --save-dev electron   
@@ -72,6 +72,7 @@ Run the following command to create an application for your current environment
     npx electron-packager . --overwrite
 
 You will find the executable in a newly created folder (e.g. photosync-win32-x64).
+Since the exectable still runs a Node web server you can also access the app via a regular web browser. 
 
 ## Disclaimer
 
