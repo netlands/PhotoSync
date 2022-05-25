@@ -32,7 +32,7 @@ Configure folder locations in the **config.json** file.
 
 If you use git to pull updates rename config.json to **config.local.json** to keep local defaults between updates.
 
-The config file alows you to set some defaults. 
+The config file allows you to set some defaults. 
 
 ## Start
 
@@ -64,9 +64,9 @@ There are a few functions available in the right-click context menu to work with
 
 ## Disclaimer
 
-I am far from a professional programmer. I made this for personal use and posted it here in case someone else has a similar problem. Feel free to re-use the code and extend the functionallity, but use the app at your own risk. 
+I am far from a professional programmer. I made this for personal use and posted it here in case someone else has a similar problem. Feel free to re-use the code and extend the functionality, but use the app at your own risk. 
 
-Copy functionallity is implemented using standard JavaScript filesystem functions, and although there is an option to delete files from the camera I strongly advise against this as it is always better to be safe than sorry when working with data. 
+Copy functionality is implemented using standard JavaScript filesystem functions, and although there is an option to delete files from the camera I strongly advise against this as it is always better to be safe than sorry when working with data. 
 
 The actual connection to your camera depends on the operating system or a third-party app so I suggest to check for any known issues before using.
 
