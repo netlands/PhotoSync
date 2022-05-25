@@ -6,7 +6,7 @@ const {
 const path = require('path');
 
 
-Menu.setApplicationMenu(false);
+//Menu.setApplicationMenu(false);
 
 function createWindow () {
   const mainWindow = new BrowserWindow({
@@ -41,5 +41,5 @@ app.on('window-all-closed', function () {
 })
 
 // run with electron: npm start
-// build using electron-packager: npx electron-packager . --overwrite
+// build using electron-packager: npx electron-packager . --overwrite --asar --ignore=^/art --ignore=^/copy --ignore=^/original --ignore=^/copy 
 

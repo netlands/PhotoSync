@@ -37,7 +37,13 @@ let quickSort = config.settings.quicksort;
 
 
 if (fs.existsSync('config.local.json')) {
-	rawdata = fs.readFileSync(path.join(__dirname,'config.local.json'));
+	readConfig(path.join(__dirname,'config.local.json'));
+  } else {
+	// no local config
+  }
+  
+function readConfig(configFile) {
+	rawdata = fs.readFileSync(configFile);
 	config = JSON.parse(rawdata);
 	sourceFolder = config.source;
 	targetFolder = config.target;
@@ -45,12 +51,7 @@ if (fs.existsSync('config.local.json')) {
 	autoCopy = config.settings.autocopy;
 	showGrid = config.settings.showgrid;
 	quickSort = config.settings.quicksort;	
-  } else {
-	// no local config
-  }
-
-
-
+}
 
 
 const inspector = require('inspector');
@@ -63,6 +64,10 @@ if (inspector.url() !== undefined) {
 
 	if(isElectron()){
 		console.log("Electron");
+		console.log(path.join(process.cwd(),'config.local.json'));
+		if (fs.existsSync(path.join(process.cwd(),'config.local.json'))) {
+			readConfig(path.join(process.cwd(),'config.local.json'));
+		} 
 	}else{
 		if (process.argv.length >= 3) {
 			sourceFolder = process.argv[2];
