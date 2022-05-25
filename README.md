@@ -61,6 +61,17 @@ There are a few functions available in the right-click context menu to work with
 
 ![How to use](./art/help.png)
 
+## Create an executable using Electron
+Install **Electron** and **Electron Packager** 
+
+    npm install --save-dev electron   
+    npm install --save-dev electron-packager   
+
+Run the following command to create an application for your current environment
+
+    npx electron-packager . --overwrite
+
+You will find the executable in a newly created folder (e.g. photosync-win32-x64).
 
 ## Disclaimer
 
@@ -74,4 +85,3 @@ The actual connection to your camera depends on the operating system or a third-
 
 - Store guides between sessions
 - Improve visibility of "floating" UI elements
-- Fix local/external security issues when using Electron
