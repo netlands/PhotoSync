@@ -130,3 +130,4 @@ dist
 *.jpg
 config.local.json
 exif.txt
+photosync-win32-x64/

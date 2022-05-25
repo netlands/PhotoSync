@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+  <meta http-equiv="Content-Security-Policy" content="script-src-elem * 'unsafe-inline'; script-src * 'unsafe-inline' 'self' ; style-src * 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:; default-src * 'self'; ">
   <title>Simple Photo Sync</title>
   <script src='https://code.jquery.com/jquery-1.9.1.min.js'></script>
   <script src="https://cdn.jsdelivr.net/npm/before-after-slider@1.0.0/dist/slider.bundle.js"></script>
@@ -20,6 +21,7 @@
   <!-- get main color: https://lokeshdhakar.com/projects/color-thief -->
   <!-- z-index of ::after https://stackoverflow.com/questions/3032856/is-it-possible-to-set-the-stacking-order-of-pseudo-elements-below-their-parent-e/9072467#9072467-->
   <script>
+    //var socket = io('http://localhost:3000');
     var socket = io();
 
     var splashScreen = true;
@@ -857,10 +859,6 @@
       position: absolute;
       background-color: #ccc;
     }
-
-
-
-
   </style>
 </head>
 
@@ -1098,7 +1096,7 @@
         </li>
         <li>
           <span class="material-icons">photo_camera</span>/&nbsp;&nbsp;<span
-          class="material-icons">desktop_windows</span> Click to copy the source or target folder to the clipboard.
+            class="material-icons">desktop_windows</span> Click to copy the source or target folder to the clipboard.
         </li>
       </ul>
       <p>To place a guide <kbd>Ctrl</kbd> + left-click the image. To clear all guides <kbd>Ctrl</kbd> + <kbd>Shift</kbd>
@@ -1222,7 +1220,6 @@
       onClick="toggleQuickSort()">Toggle Quick Sort</button> <button class="btn" onClick="showHelp()">Help</button>
   </span>
   <script>
-
     function createGrid() {
       // https://jsfiddle.net/madstop/bM5Kr/
       width = document.getElementById("container").offsetWidth + 1;

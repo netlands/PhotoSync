@@ -74,3 +74,4 @@ The actual connection to your camera depends on the operating system or a third-
 
 - Store guides between sessions
 - Improve visibility of "floating" UI elements
+- Optionally use ELectron to build executable

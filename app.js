@@ -24,8 +24,9 @@ const fs = require('fs');
 // https://expressjs.com/en/starter/static-files.html
 // https://www.base64-image.de/
 
+const path = require ("path")
 
-let rawdata = fs.readFileSync('config.json');
+let rawdata = fs.readFileSync(path.join(__dirname,'config.json'));
 let config = JSON.parse(rawdata);
 let sourceFolder = config.source;
 let targetFolder = config.target;
@@ -36,7 +37,7 @@ let quickSort = config.settings.quicksort;
 
 
 if (fs.existsSync('config.local.json')) {
-	rawdata = fs.readFileSync('config.local.json');
+	rawdata = fs.readFileSync(path.join(__dirname,'config.local.json'));
 	config = JSON.parse(rawdata);
 	sourceFolder = config.source;
 	targetFolder = config.target;
@@ -48,6 +49,10 @@ if (fs.existsSync('config.local.json')) {
 	// no local config
   }
 
+
+
+
+
 const inspector = require('inspector');
 // function isInDebugMode() { return inspector.url() !== undefined; }
 
@@ -55,14 +60,25 @@ const inspector = require('inspector');
 if (inspector.url() !== undefined) {
 	console.log("DEBUG MODE");
 } else {
-	if (process.argv.length >= 3) {
-		sourceFolder = process.argv[2];
+
+	if(isElectron()){
+		console.log("Electron");
+	}else{
+		if (process.argv.length >= 3) {
+			sourceFolder = process.argv[2];
+		}		
 	}
 }
 
 app.use(express.static("."));
 const favicon = require('express-favicon');
 app.use(favicon(__dirname + '/camera.ico'));
+
+app.use(function(req, res, next) {
+    res.setHeader("Content-Security-Policy", "script-src 'self' http://localhost:3000");
+    return next();
+});
+
 
 app.get('/', (req, res) => {
 	// res.send('<h1>Hello world</h1>');
@@ -371,4 +387,23 @@ setInterval(function(){
 		}	
 	}
 },10000) 
+
+function isElectron() {
+    // Renderer process
+    if (typeof window !== 'undefined' && typeof window.process === 'object' && window.process.type === 'renderer') {
+        return true;
+    }
+
+    // Main process
+    if (typeof process !== 'undefined' && typeof process.versions === 'object' && !!process.versions.electron) {
+        return true;
+    }
+
+    // Detect the user agent when the `nodeIntegration` option is set to true
+    if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
+        return true;
+    }
+
+    return false;
+}
 
