@@ -1344,6 +1344,8 @@
       sourcefolder = folder;
       socket.emit('setsourcefolder', folder);
       $('#file-info').html('<span class="dot"></span>Watching folder ' + sourcefolder);
+      $('#file-info').removeClass("ng");
+      $('#file-info').addClass("ok");      
       document.getElementById("source").innerText = folder;
     }
 
