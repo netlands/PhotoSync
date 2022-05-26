@@ -48,7 +48,7 @@ To streamline the startup process, use your browser to create an app from the we
 
 ## How to use
 
-You can update the configuration depending on your workflow. Options can be set or selected in the **config.json** file or via the right-click context menu.
+You can update the configuration depending on your workflow. Options can be set or selected in the **config.local.json** file or via the right-click context menu.
 
 - The most basic option is to let the tool automatically copy each new photo to your PC. Review the photo in the app. If needed make adjustments to the camera settings and/or subject and re-shoot or continue to the next photo.
 - Another option is to activate the "Quick Sort" buttons (optionally in combination with the auto copy function). This allows you to quickly triage/sort photos after each shot. Each photo can be reviewed on your PC screen and by using the Quick Sort buttons you can move the image into one of four folders: **keep**, **star**, **review**, or **discard**. 
@@ -60,6 +60,8 @@ You can update the configuration depending on your workflow. Options can be set 
 There are a few functions available in the right-click context menu to work with the files and make reviewing easier. The available options depend on the configuration. Press F1 to show the Help screen.
 
 ![How to use](./art/help.png)
+
+It is also possible to view the photos on another system (remotely) using the IP address of the Node server.
 
 ## Optional: Create an executable using Electron
 Install **Electron** and **Electron Packager** 
