@@ -36,6 +36,11 @@ let showGrid = config.settings.showgrid;
 let quickSort = config.settings.quicksort;
 
 
+var regExp = /(.+\\)resources\\.+/g;
+match = regExp.exec(__dirname);
+let exepath = (match[1]);	
+
+
 if (fs.existsSync('config.local.json')) {
 	readConfig(path.join(__dirname,'config.local.json'));
   } else {
@@ -64,9 +69,9 @@ if (inspector.url() !== undefined) {
 
 	if(isElectron()){
 		console.log("Electron");
-		console.log(path.join(process.cwd(),'config.local.json'));
-		if (fs.existsSync(path.join(process.cwd(),'config.local.json'))) {
-			readConfig(path.join(process.cwd(),'config.local.json'));
+		console.log(path.join(exepath,'config.local.json'));
+		if (fs.existsSync(path.join(exepath,'config.local.json'))) {
+			readConfig(path.join(exepath,'config.local.json'));
 		} 
 	}else{
 		if (process.argv.length >= 3) {
@@ -118,6 +123,8 @@ app.get('/', (req, res) => {
   }
 
 
+
+
   io.on('connection', (socket) => {
 	console.log('page accessed');
 	socket.on('disconnect', () => {
@@ -126,6 +133,11 @@ app.get('/', (req, res) => {
 
 	socket.on('getconfig', (msg) => {
 		io.emit('config', config);
+	});
+
+	socket.on('getexepath', (msg) => {
+	
+		io.emit('exepath', exepath);
 	});
 
 	socket.on('settargetfolder', (msg) => {

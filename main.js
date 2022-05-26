@@ -5,15 +5,14 @@ const {
   } = require("electron");
 const path = require('path');
 
-
 Menu.setApplicationMenu(false);
 
 function createWindow () {
   const mainWindow = new BrowserWindow({
     width: 960,
     height: 980,
-    minWidth: 960,
-    minHeight: 980,
+    minWidth: 860,
+    minHeight: 880,
     backgroundColor: "black",
     resizable: true,
     icon: __dirname + '/camera.ico',
@@ -26,14 +25,30 @@ function createWindow () {
   // mainWindow.openDevTools();
 }
 
-app.whenReady().then(() => {
-  createWindow()
-  
-  app.on('activate', function () {
+let myWindow = null
 
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (myWindow) {
+      if (myWindow.isMinimized()) myWindow.restore()
+      myWindow.focus()
+    }
   })
-})
+
+  // Create myWindow, load the rest of the app, etc...
+  app.whenReady().then(() => {
+    myWindow = createWindow()
+    app.on('activate', function () {
+
+      if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    })
+  })
+}
 
 
 app.on('window-all-closed', function () {

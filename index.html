@@ -38,6 +38,7 @@
     var showFileinfo = true;
     var hideGridOnMouseOver = true;
     var previousReference = true;
+    var exepath;
 
     const colorThief = new ColorThief();
 
@@ -69,6 +70,7 @@
       console.log("Connected to watcher");
       $('#file-info').html('<span class="dot"></span>Connected to server');
       $('#file-info').addClass("ok");
+      socket.emit('getexepath', "hi there!");
       socket.emit('getconfig', "hi there!");
     });
 
@@ -198,6 +200,11 @@
 
 
     var targetfolder, sourcefolder, extenstion, autocopy, quicksort, showgrid
+
+    socket.on('exepath', function (msg) {
+      console.log(msg);
+      exePath = msg;
+    })
 
     socket.on('config', function (msg) {
       // console.log(msg);
