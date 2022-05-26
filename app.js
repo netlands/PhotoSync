@@ -128,6 +128,17 @@ app.get('/', (req, res) => {
 		io.emit('config', config);
 	});
 
+	socket.on('settargetfolder', (msg) => {
+		targetFolder = msg;
+	});
+
+	socket.on('setsourcefolder', (msg) => {
+		sourceFolder = msg;
+		watcher.add(sourceFolder);  
+	})
+
+
+
   socket.on('delete target', (msg) => {
 	fs.unlink(targetFile, (err) => {
 		if (err) {

@@ -1311,11 +1311,43 @@
             splashScreen = false;
           }
         }
+      } else if (file.name === "config.local.json" || file.name === "config.json") {
+        console.log("SETTINGS!!!");
+        let reader = new FileReader()
+        reader.readAsText(file)
+        reader.onloadend = function () {
+          readConfig(reader.result);
+        }
+      } else if (!file.type && file.size % 4096 == 0) {
+        //console.log("FOLDER!!!");
       }
     }
 
     function dragOverHandler(event) {
       event.preventDefault();
+    }
+
+    function setTargetFolder(folder) {
+      targetfolder = folder;
+      socket.emit('settargetfolder', folder);
+      document.getElementById("target").innerText = folder;
+    }
+
+    function setSourceFolder(folder) {
+      sourcefolder = folder;
+      socket.emit('setsourcefolder', folder);
+      $('#file-info').html('<span class="dot"></span>Watching folder ' + sourcefolder);
+      document.getElementById("source").innerText = folder;
+    }
+
+    function readConfig(configData) {
+      config = JSON.parse(configData);
+      setSourceFolder(config.source);
+      setTargetFolder(config.target);
+      extension = config.extension;
+      autocopy = config.settings.autocopy;
+      showgrid = config.settings.showgrid;
+      quicksort = config.settings.quicksort;
     }
 
     function toggleQuickSort() {
