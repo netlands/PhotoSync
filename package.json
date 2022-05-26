@@ -7,13 +7,15 @@
     "socket.io": "^4.5.0"
   },
   "name": "photosync",
+  "productName": "Simple Photo Sync",
   "windowtitle": "Simple Photo Sync",
   "version": "1.0.0",
   "description": "Digital camera tether app",
   "homepage": "https://github.com/netlands/PhotoSync",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-packager . --overwrite --ignore=.gitignore --ignore=.+.lnk --ignore=.+.code-workspace --ignore=.+.bat --ignore=.gitattributes --ignore=^/art --ignore=^/test --icon='./camera.ico'"
   },
   "devDependencies": {
     "electron": "^19.0.0",

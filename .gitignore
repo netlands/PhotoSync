@@ -128,6 +128,8 @@ dist
 
 # Local test data
 *.jpg
+test/
 config.local.json
 exif.txt
 photosync-win32-x64/
+simple photo sync-win32-x64/
