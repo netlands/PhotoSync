@@ -41,5 +41,5 @@ app.on('window-all-closed', function () {
 })
 
 // run with electron: npm start
-// build using electron-packager: npx electron-packager . --overwrite --ignore=.gitignore --ignore=.+.lnk --ignore=.+.code-workspace --ignore=.+.bat --ignore=.gitattributes --ignore=^/art --ignore=^/test --icon='./camera.ico' 
+// build using electron-packager: npx electron-packager . --overwrite --asar --ignore=.gitignore --ignore=.+.lnk --ignore=.+.code-workspace --ignore=.+.bat --ignore=.gitattributes --ignore=^/art --ignore=^/test --icon='./camera.ico' 
 
