@@ -35,11 +35,12 @@ let autoCopy = config.settings.autocopy;
 let showGrid = config.settings.showgrid;
 let quickSort = config.settings.quicksort;
 
-
+let exePath = __dirname;
 var regExp = /(.+\\)resources\\.+/g;
 match = regExp.exec(__dirname);
-let exepath = (match[1]);	
-
+if (regExp.test(__dirname)) {
+  exepath = (match[1]);	
+}
 
 if (fs.existsSync('config.local.json')) {
 	readConfig(path.join(__dirname,'config.local.json'));
