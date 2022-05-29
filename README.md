@@ -75,7 +75,7 @@ Run the following command to create an application for your current environment
 
     npx electron-packager . --overwrite --asar
 
-You will find the executable in a newly created folder (e.g. photosync-win32-x64).
+You will find the executable in a newly created folder (e.g. photosync-win32-x64). Settings are stored in a config.local.json file located in the same folder.  
 Since the executable still runs a Node web server you can also access the app via a regular web browser. 
 
 ## Disclaimer
@@ -91,4 +91,4 @@ I have included links to code I have used in the comments.
 ## To-do
 
 - Store guides between sessions
-- Improve visibility of "floating" UI elements
+- Improve consistency of "floating" UI elements
