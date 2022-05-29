@@ -1,6 +1,6 @@
 {
-  "source": ".\\test\\original\\",
-  "target": ".\\test\\copy\\",
+  "source": "Z:\\DCIM\\",
+  "target": "D:\\work\\copy\\",
   "extension": "jpg",
   "settings": {
     "autocopy": true,
