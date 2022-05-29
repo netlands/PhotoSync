@@ -35,7 +35,7 @@ let autoCopy = config.settings.autocopy;
 let showGrid = config.settings.showgrid;
 let quickSort = config.settings.quicksort;
 
-let exePath = __dirname;
+let exepath = __dirname;
 var regExp = /(.+\\)resources\\.+/g;
 match = regExp.exec(__dirname);
 if (regExp.test(__dirname)) {
