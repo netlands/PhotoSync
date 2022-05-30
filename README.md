@@ -30,11 +30,7 @@ I suggest using the **MTPdrive** application (https://www.mtpdrive.com/). MTPdri
 
 ## Configuration
 
-Configure folder locations in the **config.json** file.
-
-If you use git to pull updates rename config.json to **config.local.json** to keep local defaults between updates.
-
-The config file allows you to set some defaults. 
+On first use a **config.local.json** file is created to store folder locations and default settings.
 
 ## Start
 
