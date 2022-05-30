@@ -22,7 +22,7 @@ function createWindow () {
 })
   // mainWindow.loadURL('http://localhost:3000');
   mainWindow.loadFile(path.join(__dirname, 'start.html'));
-  // mainWindow.openDevTools();
+  //mainWindow.openDevTools();
 }
 
 let myWindow = null

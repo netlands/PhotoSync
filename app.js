@@ -35,19 +35,17 @@ let autoCopy = config.settings.autocopy;
 let showGrid = config.settings.showgrid;
 let quickSort = config.settings.quicksort;
 
-let exepath = __dirname;
+let exepath = __dirname.toString();
+console.log(exepath);
 var regExp = /(.+\\)resources\\.+/g;
-match = regExp.exec(__dirname);
-if (regExp.test(__dirname)) {
-  exepath = (match[1]);	
+if (regExp.test(exepath)) {
+	if (exepath.match(regExp).length > 0) {
+		match = regExp.exec(exepath);
+		exepath = match[1];	
+	}
 }
 
-if (fs.existsSync('config.local.json')) {
-	readConfig(path.join(__dirname,'config.local.json'));
-  } else {
-	// no local config
-  }
-  
+
 function readConfig(configFile) {
 	rawdata = fs.readFileSync(configFile);
 	config = JSON.parse(rawdata);
@@ -59,9 +57,16 @@ function readConfig(configFile) {
 	quickSort = config.settings.quicksort;	
 }
 
+function writeConfig(configFile, configData) {
+	if (!(fs.existsSync(configFile))) {
+		fs.writeFileSync(configFile, configData);
+	}
+}
 
 const inspector = require('inspector');
 // function isInDebugMode() { return inspector.url() !== undefined; }
+
+let isApp = false;
 
 // Read command line argument
 if (inspector.url() !== undefined) {
@@ -69,12 +74,24 @@ if (inspector.url() !== undefined) {
 } else {
 
 	if(isElectron()){
+		isApp = true;
 		console.log("Electron");
-		console.log(path.join(exepath,'config.local.json'));
-		if (fs.existsSync(path.join(exepath,'config.local.json'))) {
-			readConfig(path.join(exepath,'config.local.json'));
-		} 
+		appConfig = path.join(exepath,'config.local.json');
+		console.log(exepath);
+		if (fs.existsSync(appConfig)) {
+			readConfig(appConfig);
+		} else {
+			console.log(appConfig);
+			writeConfig(appConfig, rawdata);
+		}
 	}else{
+		isApp = false;
+		if (fs.existsSync('config.local.json')) {
+			readConfig(path.join(__dirname,'config.local.json'));
+		} else {
+			// no local config
+			writeConfig(path.join(__dirname,'config.local.json'), rawdata)
+		}
 		if (process.argv.length >= 3) {
 			sourceFolder = process.argv[2];
 		}		
