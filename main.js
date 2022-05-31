@@ -13,12 +13,12 @@ function createWindow () {
     height: 980,
     minWidth: 860,
     minHeight: 880,
-    backgroundColor: "black",
+    backgroundColor: '#000000',
     resizable: true,
     icon: __dirname + '/camera.ico',
     webPreferences: {
         preload: path.join(__dirname, 'app.js')
-    }    
+    }
 })
   // mainWindow.loadURL('http://localhost:3000');
   mainWindow.loadFile(path.join(__dirname, 'start.html'));
