@@ -61,6 +61,8 @@ There are a few functions available in the right-click context menu to work with
 
 It is also possible to view the photos on another system (remotely) using the IP address of the Node server.
 
+Optionally you can place a **reference.jpg** file in the application folder to be used as a default reference when comparing.
+
 ## Optional: Create an executable using Electron
 Install **Electron** and **Electron Packager** 
 
