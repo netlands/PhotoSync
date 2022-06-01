@@ -63,6 +63,15 @@ function writeConfig(configFile, configData) {
 	}
 }
 
+
+function getReferenceFile(referencepath) {
+	refFile = referencepath; // 'reference.jpg'
+	if (fs.existsSync(refFile)) {
+		imageAsBase64 = "data:image/jpeg;base64," + fs.readFileSync(refFile, 'base64');
+		io.emit('reference', imageAsBase64);
+	}
+}
+
 const inspector = require('inspector');
 // function isInDebugMode() { return inspector.url() !== undefined; }
 
@@ -149,6 +158,10 @@ app.get('/', (req, res) => {
 
 	socket.on('getconfig', (msg) => {
 		io.emit('config', config);
+	});
+
+	socket.on('getreference', (msg) => {
+		getReferenceFile(path.join(exepath,"reference.jpg"));
 	});
 
 	socket.on('getexepath', (msg) => {
@@ -249,7 +262,7 @@ var sourceFile, targetFile, filename;
 
 watcher
 	  .on('change',  function(path) { console.log(" ~ File " + path + " has been changed"); })
-	  .on('add',  function(path) { console.log(" + File " + path + " has been added"); processFile(path); })
+	  .on('add',  function(path) { console.log(" + File " + path + " has been added"); io.emit("ping","new"); processFile(path); })
 	  .on('unlink',  function(path) { console.log(" - File " + path + " has been deleted"); });
 	  // add, change, unlink, addDir, unlinkDir
 
