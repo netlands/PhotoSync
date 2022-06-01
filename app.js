@@ -109,7 +109,7 @@ if (inspector.url() !== undefined) {
 
 app.use(express.static("."));
 const favicon = require('express-favicon');
-app.use(favicon(__dirname + '/camera.ico'));
+app.use(favicon(__dirname + '/SimplePhotoSync.ico'));
 
 app.use(function(req, res, next) {
     res.setHeader("Content-Security-Policy", "script-src 'self' 'unsafe-inline' http://localhost:3000 https://ajax.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdnjs.com https://code.jquery.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; style-src * 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:;");
