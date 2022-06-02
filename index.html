@@ -214,7 +214,7 @@
 
 
 
-    var targetfolder, sourcefolder, extenstion, autocopy, quicksort, showgrid
+    var targetfolder, sourcefolder, extenstion, autocopy, quicksort, showgrid, remoteaddress
 
     socket.on('exepath', function (msg) {
       console.log(msg);
@@ -240,6 +240,10 @@
         .lastIndexOf("\\")));
       $("#target-menu-item").attr("title", "Click to copy target folder\n " + msg.target.substring(0, msg.target
         .lastIndexOf("\\")));
+
+      remoteaddress = config.remoteaddress;
+      console.log(remoteaddress);
+
       if (autocopy) {
         console.log("autocopy on");
         $('.copy-file').addClass("hide-menu-item");
@@ -379,9 +383,28 @@
 
     })
 
+    // https://riptutorial.com/html5-canvas/example/9061/image-cropping-using-canvas
+    function cropImage(image, croppingCoords) {
+      var cc = croppingCoords;
+      var workCan = document.createElement("canvas"); // create a canvas
+      workCan.width = Math.floor(cc.width); // set the canvas resolution to the cropped image size
+      workCan.height = Math.floor(cc.height);
+      var ctx = workCan.getContext("2d"); // get a 2D rendering interface
+      ctx.drawImage(image, -Math.floor(cc.x), -Math.floor(cc
+      .y)); // draw the image offset to place it correctly on the cropped region
+      //image.src = workCan.toDataURL();       // set the image source to the canvas as a data URL
+      return workCan; //image; // workCan.toDataURL('image/jpeg', 1.0);
+    }
+
+
 
     function checkColors() {
-      const img = document.querySelector('img#photo');
+      const img = cropImage(document.querySelector('img#photo'), {
+        x: 10,
+        y: 10,
+        width: 100,
+        height: 100
+      });
       var mainColor = colorThief.getColor(img);
       if (lightOrDark(rgbToHex(mainColor[0], mainColor[1], mainColor[2])) == "dark") {
         console.log("dark");

@@ -24,6 +24,8 @@ const fs = require('fs');
 // https://expressjs.com/en/starter/static-files.html
 // https://www.base64-image.de/
 
+// in case additional server side image processing or conversions are needed https://sharp.pixelplumbing.com/
+
 const path = require ("path")
 
 let rawdata = fs.readFileSync(path.join(__dirname,'config.json'));
@@ -34,6 +36,8 @@ let extension = config.extension;
 let autoCopy = config.settings.autocopy;
 let showGrid = config.settings.showgrid;
 let quickSort = config.settings.quicksort;
+
+let remoteAddress = "127.0.0.1:3000";
 
 let exepath = __dirname.toString();
 console.log(exepath);
@@ -127,7 +131,8 @@ app.get('/', (req, res) => {
   });
 
   server.listen(3000, () => {
-	console.log('listening on http://localhost:3000 and http://' + getServerIp() + ":3000" );
+	remoteAddress = getServerIp();  
+	console.log('listening on http://localhost:3000 and http://' + remoteAddress + ":3000" );
   });
 
   function getServerIp() {
@@ -157,6 +162,7 @@ app.get('/', (req, res) => {
 	});
 
 	socket.on('getconfig', (msg) => {
+		config.remoteaddress = remoteAddress;
 		io.emit('config', config);
 	});
 
