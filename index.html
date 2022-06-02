@@ -391,7 +391,7 @@
       workCan.height = Math.floor(cc.height);
       var ctx = workCan.getContext("2d"); // get a 2D rendering interface
       ctx.drawImage(image, -Math.floor(cc.x), -Math.floor(cc
-      .y)); // draw the image offset to place it correctly on the cropped region
+        .y)); // draw the image offset to place it correctly on the cropped region
       //image.src = workCan.toDataURL();       // set the image source to the canvas as a data URL
       return workCan; //image; // workCan.toDataURL('image/jpeg', 1.0);
     }
@@ -480,9 +480,21 @@
     }
 
     img#photo {
+      top: 0;
+      left: 0;
       max-width: 100%;
       max-height: 100vh;
       display: block;
+      /* remove extra space below image */
+    }
+
+    img#reference {
+      top: 0;
+      left: 0;
+      max-width: 100%;
+      max-height: 100vh;
+      position: relative;
+      display: none;
       /* remove extra space below image */
     }
 
@@ -501,10 +513,10 @@
     }
 
     #reference {
+      position: absolute;
       display: none;
       z-index: 10;
     }
-
 
     #guides {
       cursor: default;
@@ -1299,6 +1311,38 @@
     }
 
     // ------------------------------------------------
+
+
+
+
+    document.getElementById("container").addEventListener("mousedown", function (event) {
+      if (event.altKey) {
+        toggleReference()
+      }
+    });
+
+    document.getElementById("container").addEventListener("mouseup", function (event) {
+      if (event.altKey) {
+        toggleReference()
+      }
+    });
+
+    function toggleReference() {
+      if ($("#photo").is(':visible')) {
+        $("#photo").hide();
+        $("#reference").show();
+      } else {
+        $("#photo").show();
+        $("#reference").hide();
+      }
+    }
+
+    const img = document.querySelector('img#reference')
+    img.ondragstart = () => {
+      return false;
+    };
+
+
     dblClicked = false;
     const container = document.querySelector('#container');
     container.addEventListener('dblclick', function (e) {
