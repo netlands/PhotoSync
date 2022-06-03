@@ -37,7 +37,7 @@ let autoCopy = config.settings.autocopy;
 let showGrid = config.settings.showgrid;
 let quickSort = config.settings.quicksort;
 
-let remoteAddress = "127.0.0.1:3000";
+let remoteAddress = "127.0.0.1";
 
 let exepath = __dirname.toString();
 console.log(exepath);
@@ -116,7 +116,7 @@ const favicon = require('express-favicon');
 app.use(favicon(__dirname + '/SimplePhotoSync.ico'));
 
 app.use(function(req, res, next) {
-    res.setHeader("Content-Security-Policy", "script-src 'self' 'unsafe-inline' http://localhost:3000 https://ajax.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdnjs.com https://code.jquery.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; style-src * 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:;");
+    res.setHeader("Content-Security-Policy", "script-src 'self' 'unsafe-inline' http://localhost:" + serverPort + " https://ajax.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdnjs.com https://code.jquery.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; style-src * 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:;");
     return next();
 });
 
@@ -130,9 +130,11 @@ app.get('/', (req, res) => {
 	res.sendFile(__dirname + '/test/test.html');
   });
 
-  server.listen(3000, () => {
+  let serverPort = 3000;
+
+  server.listen(serverPort, () => {
 	remoteAddress = getServerIp();  
-	console.log('listening on http://localhost:3000 and http://' + remoteAddress + ":3000" );
+	console.log('listening on http://localhost:' + serverPort + ' and http://' + remoteAddress + ":" + serverPort );
   });
 
   function getServerIp() {
@@ -180,6 +182,7 @@ app.get('/', (req, res) => {
 	});
 
 	socket.on('setsourcefolder', (msg) => {
+		watcher.unwatch(sourceFolder);
 		sourceFolder = msg;
 		watcher.add(sourceFolder);  
 	})
@@ -435,21 +438,27 @@ function getExtension(path) {
 }
 
 var folderMissing = false;
+var checkInterval = 10000;
+
 
 // check if watched folder is still available
 setInterval(function(){ 
 	if (!(fs.existsSync(sourceFolder))) {
 		if (!(folderMissing)) { console.log('Source location is not accesible!'); }
 		io.emit('missing sourcefolder',"");
+		watcher.unwatch(sourceFolder);
 		folderMissing = true;
+		checkInterval = 5000;
 	} else {
 		if (folderMissing) {
+			watcher.add(sourceFolder);
 			folderMissing = false;
 			console.log('Source location is available!');
 			io.emit('folder is back',"");
+			checkInterval = 10000;
 		}	
 	}
-},10000) 
+},checkInterval) 
 
 function isElectron() {
     // Renderer process
