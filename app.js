@@ -9,13 +9,15 @@ const chokidar = require('chokidar');
 const { exec } = require("child_process");
 const fs = require('fs');
 
+const ExifReader = require('exifreader');
+
 //var sourceFolder = '.\\original\\';
 //var targetFolder = '.\\copy\\';
 //var extension = "jpg";
 //var autocopy = true;
 
 // https://github.com/paulmillr/chokidar
-// https://github.com/gomfunkel/node-exif
+// https://github.com/mattiasw/ExifReader (Replaced https://github.com/gomfunkel/node-exif)
 // camera specific exif https://exiftool.org/TagNames/Panasonic.html https://exiftool.org/TagNames/EXIF.html https://exiv2.org/tags-panasonic.html
 // https://stackabuse.com/executing-shell-commands-with-node-js/
 // https://stackoverflow.com/questions/7076958/read-exif-and-determine-if-the-flash-has-fired
@@ -308,7 +310,6 @@ function processFile(path) {
 	// console.log(imageAsBase64);
 	io.emit('new photo', imageAsBase64);
 
-	var ExifImage = require('exif').ExifImage;
 	var exif = {};
 	exif.filename = filename;
 	exif.source = sourceFile;
@@ -316,37 +317,25 @@ function processFile(path) {
 	exif.autocopy = autoCopy;
 
 	try {
-		new ExifImage({ image : target }, function (error, exifData) {
-			if (error) {
-				console.log('Error: '+error.message);
-				exif.SS = "";
-				exif.F = "";
-				exif.ISO = "";
-				exif.EV = "";
-				exif.flash = "";
-				exif.mode = "";
-				io.emit('new data', exif);
-			} else {
-				// console.log(exifData); // Do something with your data!
-				var path = require('path');
-				if (inspector.url() !== undefined) { fs.writeFileSync(path.join(targetFolder,"exif.txt"),JSON.stringify(exifData)); } //
-				exif.SS = fra_to_dec(exifData.exif.ExposureTime);
-				exif.F = exifData.exif.FNumber;
-				exif.ISO = exifData.exif.ISO;
-				exif.EV = exifData.exif.ExposureCompensation;
-				exif.mode = getMode(exifData.exif.ExposureProgram);
-				exif.flash = flashFired(exifData.exif.Flash);
-				io.emit('new data', exif);
-			}
-		});
+		const tags = ExifReader.load(fs.readFileSync(target));
+		// console.log(tags['DateTimeOriginal'].description);
+		exif.SS = (tags['ExposureTime'].description);
+		exif.F = (tags['FNumber'].description);
+		exif.ISO = (tags['ISOSpeedRatings'].description);
+		exif.EV = (tags['ExposureBiasValue'].description);
+		exif.mode = (getMode(tags['ExposureProgram'].value));
+		exif.flash = (flashFired(tags['Flash'].description));
+		exif.WB = ((tags['WhiteBalance'].description.toString().split(' ')[0]));
+		io.emit('new data', exif);
 	} catch (error) {
-		console.log('Error: ' + error.message);
+		console.log('No exif data'); // error.message
 			exif.SS = "";
 			exif.F = "";
 			exif.ISO = "";
 			exif.EV = "";
 			exif.flash = "";
 			exif.mode = "";
+			exif.WB = "";
 			io.emit('new data', exif);
 	}
 
@@ -392,6 +381,9 @@ function getMode(exifValue) {
 }
 
 function flashFired(exifValue) {
+	answer = exifValue.toString().split(',')[0];
+	return answer;
+	/*
 	//check if the number is even
 	if(exifValue % 2 == 0) {
 		return("did not fire");
@@ -400,7 +392,7 @@ function flashFired(exifValue) {
 	// if the number is odd
 	else {
 		return("fired");
-	}
+	} */
 }	
 
 

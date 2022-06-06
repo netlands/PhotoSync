@@ -122,8 +122,8 @@
         //
       } else {
         if (msg.hasOwnProperty('ISO')) {
-          $('#file-info').text("SS " + msg.SS + ", F " + msg.F + ", ISO " + msg.ISO + ", " + msg.EV +
-            " EV, flash " +
+          $('#file-info').text("SS " + msg.SS + ", " + msg.F + ", ISO " + msg.ISO + ", " + msg.EV +
+            " EV, " +
             msg
             .flash); // + " " + msg.mode);
           $('#file-info').show();
@@ -137,11 +137,13 @@
           document.getElementById("F").innerText = msg.F;
           document.getElementById("SS").innerText = msg.SS;
           document.getElementById("EV").innerText = msg.EV;
-          document.getElementById("mode").innerText = msg.mode;
+          document.getElementById("camera_mode").innerText = msg.mode;
           if (msg.flash.includes("not")) {
             document.getElementById("flash").innerText = "flash_off";
+            document.getElementById("flash_mode").innerText = "off";
           } else {
             document.getElementById("flash").innerText = "flash_on";
+            document.getElementById("flash_mode").innerText = "on";
           }
         }
       }
@@ -664,8 +666,16 @@
 
     /* red rgba(255, 0, 0, 0.25) */
 
-    #mode {
+    #camera_mode {
+      display: inline-block;
       font-weight: bold;
+      text-align: center;
+      border-radius: 10%;
+      width: 25px;
+      height: 12px;
+      color: #999999;
+      font-size: smaller;
+      background-color: #eee;
     }
 
     /* Group same frames together */
@@ -811,6 +821,10 @@
 
     #context-menu .item:hover {
       background: #454545;
+    }
+
+    #context-menu .item:hover div div {
+      color: #454545;
     }
 
     #context-menu .item.warning:hover {
@@ -968,11 +982,13 @@
     </div>
     <hr />
     <div class="item hide-menu-item" id="exif">
-      <div><span class="material-icons">camera</span>F <span id="F"></span>
-        <span class="material-icons">shutter_speed</span>SS <span id="SS"></span></div>
+      <div>
+        <div id="camera_mode"></div> &nbsp;<span class="material-icons">camera</span><span id="F"></span>
+        <span class="material-icons">shutter_speed</span>SS <span id="SS"></span>
+      </div>
       <div><span class="material-icons">camera_roll</span>ISO <span id="ISO"></span>
         <span class="material-icons">iso</span><span id="EV"></span> EV
-        <span id="flash" class="material-icons">flash_on</span><span id="mode">flash_on</span></div>
+        <span id="flash" class="material-icons">flash_on</span><span id="flash_mode"></span></div>
     </div>
     <div class="item" title="Show help" onclick="showHelp();">
       <span class="material-icons">help_outline</span> <span>Help</span>
@@ -1139,7 +1155,8 @@
           </ul>
         </li>
         <li>
-          <span class="material-icons">compare</span> Switch to Compare view. To toggle the reference <kbd>Alt</kbd> + click-hold left mouse button.
+          <span class="material-icons">compare</span> Switch to Compare view. To toggle the reference <kbd>Alt</kbd> +
+          click-hold left mouse button.
         </li>
         <li>
           <span class="material-icons">category</span> Show/hide the Quick Sort buttons.
