@@ -90,3 +90,5 @@ I have included links to code I have used in the comments.
 
 - Store guides between sessions
 - Improve consistency of "floating" UI elements
+- improve audio cues (error: long beep, connect: low-high, disconnect: high-low)
+- Optionally warn when stored "camera settings" are not used
