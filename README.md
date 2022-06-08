@@ -63,6 +63,12 @@ It is also possible to view the photos on another system (remotely) using the IP
 
 Optionally you can place a **reference.jpg** file in the application folder to be used as a default reference when comparing.
 
+When automatically checking camera settings enter the required settings in the **config.local.json** under **defaults**  in the same way they are displayed in the app.
+
+    "defaults": "M, SS 1/250, f/7.1, ISO 200, 0 EV, Flash fired"
+
+You can copy the values to the clipboard from the right-click context menu.
+
 ## Optional: Create an executable using Electron
 Install **Electron** and **Electron Packager** 
 
