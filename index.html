@@ -256,6 +256,9 @@
       autocopy = config.settings.autocopy;
       showgrid = config.settings.showgrid;
       quicksort = config.settings.quicksort;
+      playAudio = config.settings.playaudio;
+      checkSettings = config.settings.checksettings;
+      cameraDefault = hashCode(config.defaults);
       previousReference = config.settings.previousreference;
       document.getElementById("source").innerText = msg.source.substring(0, msg.source.lastIndexOf("\\"));
       document.getElementById("target").innerText = msg.target.substring(0, msg.target.lastIndexOf("\\"));
@@ -299,9 +302,6 @@
 
 
       }
-
-      cameraDefault = hashCode("M, SS 1/250, f/7.1, ISO 200, 0 EV, Flash fired");
-
 
     });
 

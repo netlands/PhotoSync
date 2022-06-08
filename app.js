@@ -60,7 +60,11 @@ function readConfig(configFile) {
 	extension = config.extension;
 	autoCopy = config.settings.autocopy;
 	showGrid = config.settings.showgrid;
-	quickSort = config.settings.quicksort;	
+	quickSort = config.settings.quicksort;
+	
+	playAudio = config.settings.playaudio;
+	checkSettings = config.settings.checksettings;
+	cameraDefaults = config.defaults;  
 }
 
 function writeConfig(configFile, configData) {

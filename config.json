@@ -2,10 +2,13 @@
   "source": "Z:\\DCIM\\",
   "target": "D:\\work\\copy\\",
   "extension": "jpg",
+  "defaults": "",
   "settings": {
     "autocopy": true,
     "showgrid": true,
     "quicksort": false,
-    "previousreference": true
+    "previousreference": true,
+    "playaudio": true,
+    "checksettings": false
   }
 }
