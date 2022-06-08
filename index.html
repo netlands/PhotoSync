@@ -140,6 +140,7 @@
             .flash); // + " " + );
           $('#file-info').show();
           cameraHash = hashCode($('#file-info').text());
+          $("#exif").attr("data-clipboard-text",$('#file-info').text());
           if (checkSettings) {
             if (cameraHash == cameraDefault) {
               $('#file-info').removeClass("bad");
@@ -1009,7 +1010,7 @@
       <div class="truncate" id="target">Target Folder</div>
     </div>
     <hr />
-    <div class="item hide-menu-item" id="exif">
+    <div class="item clip hide-menu-item" id="exif" data-clipboard-text="" title="Click to copy settings">
       <div>
         <div id="camera_mode"></div> &nbsp;<span class="material-icons">camera</span><span id="F"></span>
         <span class="material-icons">shutter_speed</span>SS <span id="SS"></span>
