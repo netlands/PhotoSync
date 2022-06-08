@@ -90,4 +90,3 @@ I have included links to code I have used in the comments.
 
 - Store guides between sessions
 - Improve consistency of "floating" UI elements
-- Optionally warn when stored "camera settings" are not used
