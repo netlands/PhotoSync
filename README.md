@@ -94,5 +94,4 @@ I have included links to code I have used in the comments.
 
 ## To-do
 
-- Store guides between sessions
-- Improve consistency of "floating" UI elements
+See the issue tracker
