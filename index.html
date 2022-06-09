@@ -21,6 +21,7 @@
   <!-- get main color: https://lokeshdhakar.com/projects/color-thief -->
   <!-- z-index of ::after https://stackoverflow.com/questions/3032856/is-it-possible-to-set-the-stacking-order-of-pseudo-elements-below-their-parent-e/9072467#9072467-->
   <!-- progressbar: http://buunguyen.github.io/topbar/-->
+  <!-- https://mionskowski.pl/posts/positioning-a-context-menu-using-pure-css/ -->
   <script>
     //var socket = io('http://localhost:3000');
     var socket = io();
@@ -140,7 +141,7 @@
             .flash); // + " " + );
           $('#file-info').show();
           cameraHash = hashCode($('#file-info').text());
-          $("#exif").attr("data-clipboard-text",$('#file-info').text());
+          $("#exif").attr("data-clipboard-text", $('#file-info').text());
           if (checkSettings) {
             if (cameraHash == cameraDefault) {
               $('#file-info').removeClass("bad");
@@ -826,14 +827,26 @@
     }
 
     #context-menu {
-      position: fixed;
+      transform: scale(0);
+      transform-origin: top left;
+    }
+
+    #context-menu {
       z-index: 10000;
       width: 220px;
       background: #999999;
       border-radius: 5px;
-      transform: scale(0);
-      transform-origin: top left;
+      --mouse-x: 0;
+      --mouse-y: 0;
+      display: none;
+      position: fixed;
+      margin: 0;
+      left: 0;
+      top: 0;
+      /* The following line is responsible for all the magic */
+      transform: translateX(min(var(--mouse-x), calc(100vw - 100%))) translateY(min(var(--mouse-y), calc(100vh - 100%)));
     }
+
 
     #context-menu.active {
       transform: scale(1);
@@ -849,6 +862,12 @@
     }
 
     #context-menu .item:hover {
+      background: #454545;
+    }
+
+    #context-menu .item:hover:nth-of-type(1) {
+      border-top-left-radius: 5px;
+      border-top-right-radius: 5px;
       background: #454545;
     }
 
@@ -1207,120 +1226,7 @@
     </div>
 
   </div>
-  <span class="debug">
-    <style>
-      .btn {
-        position: relative;
-        display: inline-block;
-        box-sizing: border-box;
-        border: none;
-        border-radius: 4px;
-        padding: 0 16px;
-        min-width: 64px;
-        height: 36px;
-        vertical-align: middle;
-        text-align: center;
-        text-overflow: ellipsis;
-        text-transform: uppercase;
-        color: rgb(var(--pure-material-onprimary-rgb, 255, 255, 255));
-        background-color: rgb(var(--pure-material-primary-rgb, 33, 150, 243));
-        box-shadow: 0 3px 1px -2px rgba(0, 0, 0, 0.2), 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12);
-        font-family: var(--pure-material-font, "Roboto", "Segoe UI", BlinkMacSystemFont, system-ui, -apple-system);
-        font-size: 14px;
-        font-weight: 500;
-        line-height: 36px;
-        overflow: hidden;
-        outline: none;
-        cursor: pointer;
-        transition: box-shadow 0.2s;
-      }
-
-      .btn::-moz-focus-inner {
-        border: none;
-      }
-
-      /* Overlay */
-      .btn::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background-color: rgb(var(--pure-material-onprimary-rgb, 255, 255, 255));
-        opacity: 0;
-        transition: opacity 0.2s;
-      }
-
-      /* Ripple */
-      .btn::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        border-radius: 50%;
-        padding: 50%;
-        width: 32px;
-        /* Safari */
-        height: 32px;
-        /* Safari */
-        background-color: rgb(var(--pure-material-onprimary-rgb, 255, 255, 255));
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(1);
-        transition: opacity 1s, transform 0.5s;
-      }
-
-      /* Hover, Focus */
-      .btn:hover,
-      .btn:focus {
-        box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.2), 0 4px 5px 0 rgba(0, 0, 0, 0.14), 0 1px 10px 0 rgba(0, 0, 0, 0.12);
-      }
-
-      .btn:hover::before {
-        opacity: 0.08;
-      }
-
-      .btn:focus::before {
-        opacity: 0.24;
-      }
-
-      .btn:hover:focus::before {
-        opacity: 0.3;
-      }
-
-      /* Active */
-      .btn:active {
-        box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12);
-      }
-
-      .btn:active::after {
-        opacity: 0.32;
-        transform: translate(-50%, -50%) scale(0);
-        transition: transform 0s;
-      }
-
-      /* Disabled */
-      .btn:disabled {
-        color: rgba(var(--pure-material-onsurface-rgb, 0, 0, 0), 0.38);
-        background-color: rgba(var(--pure-material-onsurface-rgb, 0, 0, 0), 0.12);
-        box-shadow: none;
-        cursor: initial;
-      }
-
-      .btn:disabled::before {
-        opacity: 0;
-      }
-
-      .btn:disabled::after {
-        opacity: 0;
-      }
-    </style>
-    <button class="btn" onClick="toggleGrid()">Toggle Grid</button> <button class="btn" onClick="toggleZoom()">Toggle
-      Zoom</button> <button class="btn" onClick="toggleCompare()">Toggle Compare</button> <button class="btn"
-      onClick="toggleCrosshair()">Toggle
-      Crosshair</button> <button class="btn" onClick="toggleFileinfo()">Toggle File Info</button> <button class="btn"
-      onClick="toggleQuickSort()">Toggle Quick Sort</button> <button class="btn" onClick="showHelp()">Help</button>
-  </span>
+  <span class="debug"></span>
   <script>
     function createGrid() {
       // https://jsfiddle.net/madstop/bM5Kr/
@@ -1629,13 +1535,14 @@
 
 
     function hideMenu() {
-      document.getElementById("context-menu").classList.remove("active");
+      document.getElementById("context-menu").style.display = 'none';
+      //document.getElementById("context-menu").classList.remove("active");
     }
 
     window.addEventListener('load', function () {
       console.log("loaded");
       document.getElementById("container").addEventListener("contextmenu", function (event) {
-
+        console.log("TATATATA");
         event.preventDefault();
 
         var contextElement = document.getElementById("context-menu");
@@ -1643,12 +1550,18 @@
         contextElement.addEventListener("click", hideMenu);
         contextElement.addEventListener("mouseleave", hideMenu);
 
-        contextElement.style.top = (event.clientY - 4) + "px";
-        contextElement.style.left = (event.clientX - 4) + "px";
-        contextElement.classList.add("active");
+
+        contextElement.style.setProperty('--mouse-x', event.clientX - 4 + 'px');
+        contextElement.style.setProperty('--mouse-y', event.clientY - 4 + 'px');
+        contextElement.style.display = 'block';
+
+        //contextElement.style.top =  (event.clientY - 4) + "px";
+        //contextElement.style.left = (event.clientX - 4) + "px";
+        //contextElement.classList.add("active");
 
       });
     });
+
 
     function resizeActions() {
 
