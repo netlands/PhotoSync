@@ -1018,7 +1018,7 @@
 
   <body>
     <div id="context-menu">
-      <div class="item" onclick="showSetting();">
+      <div class="item" title="Open Settings" onclick="showSettings();">
         <span class="material-icons">settings</span> Settings
       </div>
       <div class="item copy-file" onclick="copyFile();">
@@ -1282,6 +1282,14 @@
         function closeHelp() {
           modal.style.display = "none";
         }
+
+        function showSettings() {
+          document.getElementById("settings").style.display = "block";
+        }
+
+        function closeSettings() {
+          document.getElementById("settings").style.display = "none";
+        }
       </script>
       <!-- Modal content -->
       <div class="modal-content">
@@ -1362,6 +1370,51 @@
         <p>
           To place a guide <kbd>Ctrl</kbd> + left-click the image. To clear all
           guides <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + left-click the image.
+        </p>
+      </div>
+    </div>
+    <div id="settings" class="modal">
+      <div class="modal-content">
+        <span onclick="closeSettings()" class="close" id="close">&times;</span>
+        <h3>Settings</h3>
+        <form action="/updatesettings">
+          <label for="srcFldr">Folder to watch (camera):</label><br />
+          <input type="text" id="srcFldr" name="source" value="xxx" /><br />
+
+          <label for="tgtFldr">Target folder (PC):</label><br />
+          <input type="text" id="tgtFldr" name="target" value="yyy" /><br />
+
+          <label for="extension">File extension to watch:</label><br />
+          <input
+            type="text"
+            id="extension"
+            name="extension"
+            value="jpg"
+          /><br />
+
+          <label for="autoCopy">Automatically copy new files</label><br />
+          <input
+            type="checkbox"
+            id="autoCopy"
+            name="autocopy"
+            value="autocopy"
+          />
+
+          <label for="playAudio">Play audio cues</label><br />
+          <input
+            type="checkbox"
+            id="playAudio"
+            name="playaudio"
+            value="playaudio"
+          />
+
+          <br />
+          <input type="submit" value="Update" />
+        </form>
+
+        <p>
+          If you click the "Submit" button, the form-data will be sent to a page
+          called "/action_page.php".
         </p>
       </div>
     </div>
