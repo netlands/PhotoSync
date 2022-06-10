@@ -19,6 +19,11 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
     />
+    <link
+      rel="stylesheet"
+      href="https://code.getmdl.io/1.3.0/material.grey-lime.min.css"
+    />
+    <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
     <!-- https://fonts.google.com/icons?selected=Material+Icons&icon.set=Material+Icons -->
     <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.5.0/dist/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>
@@ -1013,6 +1018,9 @@
 
   <body>
     <div id="context-menu">
+      <div class="item" onclick="showSetting();">
+        <span class="material-icons">settings</span> Settings
+      </div>
       <div class="item copy-file" onclick="copyFile();">
         <span class="material-icons">file_copy</span> Copy Photo
       </div>
@@ -1689,7 +1697,6 @@
         document
           .getElementById("container")
           .addEventListener("contextmenu", function (event) {
-            console.log("TATATATA");
             event.preventDefault();
 
             var contextElement = document.getElementById("context-menu");
@@ -1699,11 +1706,11 @@
 
             contextElement.style.setProperty(
               "--mouse-x",
-              event.clientX - 4 + "px"
+              event.clientX - 8 + "px"
             );
             contextElement.style.setProperty(
               "--mouse-y",
-              event.clientY - 4 + "px"
+              event.clientY - 8 + "px"
             );
             contextElement.style.display = "block";
 
