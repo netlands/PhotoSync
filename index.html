@@ -1,1773 +1,1985 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Simple Photo Sync</title>
+    <script src="https://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/before-after-slider@1.0.0/dist/slider.bundle.js"></script>
+    <!-- compare: https://github.com/VincentTV/before-after-slider -->
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/gh/cotton123236/zoomist@latest/dist/zoomist.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/gh/cotton123236/zoomist@latest/dist/zoomist.min.js"></script>
+    <!-- zoom: https://github.com/cotton123236/zoomist -->
+    <!-- grid: https://stackoverflow.com/questions/32556463/overlay-grid-on-responsive-image -->
+    <!-- crosshair: https://codepen.io/michaelsboost/pen/DEQzoN -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+    <!-- https://fonts.google.com/icons?selected=Material+Icons&icon.set=Material+Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.5.0/dist/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <!-- get main color: https://lokeshdhakar.com/projects/color-thief -->
+    <!-- z-index of ::after https://stackoverflow.com/questions/3032856/is-it-possible-to-set-the-stacking-order-of-pseudo-elements-below-their-parent-e/9072467#9072467-->
+    <!-- progressbar: http://buunguyen.github.io/topbar/-->
+    <!-- https://mionskowski.pl/posts/positioning-a-context-menu-using-pure-css/ -->
+    <script>
+      //var socket = io('http://localhost:3000');
+      var socket = io();
 
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simple Photo Sync</title>
-  <script src='https://code.jquery.com/jquery-1.9.1.min.js'></script>
-  <script src="https://cdn.jsdelivr.net/npm/before-after-slider@1.0.0/dist/slider.bundle.js"></script>
-  <!-- compare: https://github.com/VincentTV/before-after-slider -->
-  <link rel="stylesheet" type="text/css"
-    href="https://cdn.jsdelivr.net/gh/cotton123236/zoomist@latest/dist/zoomist.min.css" />
-  <script src="https://cdn.jsdelivr.net/gh/cotton123236/zoomist@latest/dist/zoomist.min.js"></script>
-  <!-- zoom: https://github.com/cotton123236/zoomist -->
-  <!-- grid: https://stackoverflow.com/questions/32556463/overlay-grid-on-responsive-image -->
-  <!-- crosshair: https://codepen.io/michaelsboost/pen/DEQzoN -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-  <!-- https://fonts.google.com/icons?selected=Material+Icons&icon.set=Material+Icons -->
-  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.5.0/dist/socket.io.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
-  <!-- get main color: https://lokeshdhakar.com/projects/color-thief -->
-  <!-- z-index of ::after https://stackoverflow.com/questions/3032856/is-it-possible-to-set-the-stacking-order-of-pseudo-elements-below-their-parent-e/9072467#9072467-->
-  <!-- progressbar: http://buunguyen.github.io/topbar/-->
-  <!-- https://mionskowski.pl/posts/positioning-a-context-menu-using-pure-css/ -->
-  <script>
-    //var socket = io('http://localhost:3000');
-    var socket = io();
+      var splashScreen = true;
+      var showWarning = false;
+      var playAudio = true;
 
-    var splashScreen = true;
-    var showWarning = false;
-    var playAudio = true;
+      var sourceFile, targetFile, filename;
+      var firstFile = true;
 
-    var sourceFile, targetFile, filename;
-    var firstFile = true;
+      var checkSettings = true;
+      var cameraDefault = "M, SS 1/250, f/7.1, ISO 200, 0 EV, Flash fired";
+      var cameraHash = "";
 
-    var checkSettings = true;
-    var cameraDefault = "M, SS 1/250, f/7.1, ISO 200, 0 EV, Flash fired";
-    var cameraHash = "";
+      var maxItemLen = 20;
 
-    var maxItemLen = 20;
+      var showgrid = true;
+      var showCompare = false;
+      var zoomActive = false;
+      var showCrosshair = true;
+      var showFileinfo = true;
+      var hideGridOnMouseOver = true;
+      var previousReference = true;
+      var exepath;
 
-    var showgrid = true;
-    var showCompare = false;
-    var zoomActive = false;
-    var showCrosshair = true;
-    var showFileinfo = true;
-    var hideGridOnMouseOver = true;
-    var previousReference = true;
-    var exepath;
+      const colorThief = new ColorThief();
 
-    const colorThief = new ColorThief();
+      socket.on("disconnect", function () {
+        // Houston, we have a problem ...
+        console.log("Lost connection to watcher");
+        $("#file-info").html(
+          '<span class="dot warning"></span>Connection Lost. Check server and device'
+        );
+        $("#file-info").addClass("ng");
+        showWarning = true;
+        errorSnd();
+      });
 
-    socket.on('disconnect', function () {
-      // Houston, we have a problem ...
-      console.log("Lost connection to watcher");
-      $('#file-info').html('<span class="dot warning"></span>Connection Lost. Check server and device');
-      $('#file-info').addClass("ng");
-      showWarning = true;
-      errorSnd();
-    })
+      socket.on("missing sourcefolder", function () {
+        // Houston, we have a problem ...
+        console.log("Source folder missing");
+        $("#file-info").html(
+          '<span class="dot warning"></span>Missing source folder. Check device'
+        );
+        $("#file-info").addClass("ng");
+        if (!showWarning) {
+          disconnectSnd();
+        }
+        showWarning = true;
+      });
 
-    socket.on('missing sourcefolder', function () {
-      // Houston, we have a problem ...
-      console.log("Source folder missing");
-      $('#file-info').html('<span class="dot warning"></span>Missing source folder. Check device');
-      $('#file-info').addClass("ng");
-      if (!showWarning) {
-        disconnectSnd();
-      }
-      showWarning = true;
-    })
+      socket.on("folder is back", function () {
+        $("#file-info").html('<span class="dot"></span>Connected to server');
+        $("#file-info").addClass("ok");
+        socket.emit("getconfig", "hi there!");
+        showWarning = false;
+        connectSnd();
+      });
 
-    socket.on('folder is back', function () {
-      $('#file-info').html('<span class="dot"></span>Connected to server');
-      $('#file-info').addClass("ok");
-      socket.emit('getconfig', "hi there!");
-      showWarning = false;
-      connectSnd();
-    });
+      socket.on("connect", function () {
+        console.log("Connected to watcher");
+        connectSnd();
+        $("#file-info").html('<span class="dot"></span>Connected to server');
+        $("#file-info").addClass("ok");
+        socket.emit("getexepath", "hi there!");
+        socket.emit("getconfig", "hi there!");
+        socket.emit("getreference", "hi there!");
+      });
 
+      socket.on("reference", function (msg) {
+        document.getElementById("reference").src = msg;
+        previousReference = false;
+      });
 
-    socket.on('connect', function () {
-      console.log("Connected to watcher");
-      connectSnd();
-      $('#file-info').html('<span class="dot"></span>Connected to server');
-      $('#file-info').addClass("ok");
-      socket.emit('getexepath', "hi there!");
-      socket.emit('getconfig', "hi there!");
-      socket.emit('getreference', "hi there!");
-    });
+      socket.on("ping", function () {
+        console.log("receiving data...");
+        topbar.show();
+        newphotoSnd();
+      });
 
-    socket.on('reference', function (msg) {
-      document.getElementById("reference").src = msg;
-      previousReference = false;
-    })
-
-    socket.on('ping', function () {
-      console.log("receiving data...");
-      topbar.show();
-      newphotoSnd();
-    })
-
-
-    socket.on('new photo', function (msg) {
-      // console.log(msg);
-      if (previousReference) {
-        document.getElementById("reference").src = document.getElementById("photo").src;
-      }
-      splashScreen = false;
-      $('#file-info').removeClass("ok");
-      $('#file-info').removeClass("ng");
-      showWarning = false;
-      document.getElementById("photo").src = msg;
-      if (showCompare) {
-        destroyCompare();
-      }
-      if (zoomActive) {
-        closeZoom();
-      }
-      $('.copy-file').removeClass("hide-menu-item");
-      $('.filename').removeClass("hide-menu-item");
-      $("#triage").removeClass("done");
-      topbar.hide();
-    });
-    socket.on('new data', function (msg) {
-      // console.log(msg);
-      $('#exif').removeClass("hide-menu-item")
-      document.getElementById("photo").title = msg.filename;
-      $("#filename-menu-item").attr("title", "Click to copy filename\n " + msg.filename);
-      sourceFile = msg.source;
-      targetFile = msg.target;
-      filename = msg.filename;
-      $('#file-info').text(msg.filename);
-      if ((msg.ISO == null) || (msg.ISO == "")) {
-        //
-      } else {
-        if (msg.hasOwnProperty('ISO')) {
-          $('#file-info').text(msg.mode + ", SS " + msg.SS + ", " + msg.F + ", ISO " + msg.ISO + ", " + msg.EV +
-            " EV, " +
-            msg
-            .flash); // + " " + );
-          $('#file-info').show();
-          cameraHash = hashCode($('#file-info').text());
-          $("#exif").attr("data-clipboard-text", $('#file-info').text());
-          if (checkSettings) {
-            if (cameraHash == cameraDefault) {
-              $('#file-info').removeClass("bad");
+      socket.on("new photo", function (msg) {
+        // console.log(msg);
+        if (previousReference) {
+          document.getElementById("reference").src =
+            document.getElementById("photo").src;
+        }
+        splashScreen = false;
+        $("#file-info").removeClass("ok");
+        $("#file-info").removeClass("ng");
+        showWarning = false;
+        document.getElementById("photo").src = msg;
+        if (showCompare) {
+          destroyCompare();
+        }
+        if (zoomActive) {
+          closeZoom();
+        }
+        $(".copy-file").removeClass("hide-menu-item");
+        $(".filename").removeClass("hide-menu-item");
+        $("#triage").removeClass("done");
+        topbar.hide();
+      });
+      socket.on("new data", function (msg) {
+        // console.log(msg);
+        $("#exif").removeClass("hide-menu-item");
+        document.getElementById("photo").title = msg.filename;
+        $("#filename-menu-item").attr(
+          "title",
+          "Click to copy filename\n " + msg.filename
+        );
+        sourceFile = msg.source;
+        targetFile = msg.target;
+        filename = msg.filename;
+        $("#file-info").text(msg.filename);
+        if (msg.ISO == null || msg.ISO == "") {
+          //
+        } else {
+          if (msg.hasOwnProperty("ISO")) {
+            $("#file-info").text(
+              msg.mode +
+                ", SS " +
+                msg.SS +
+                ", " +
+                msg.F +
+                ", ISO " +
+                msg.ISO +
+                ", " +
+                msg.EV +
+                " EV, " +
+                msg.flash
+            ); // + " " + );
+            $("#file-info").show();
+            cameraHash = hashCode($("#file-info").text());
+            $("#exif").attr("data-clipboard-text", $("#file-info").text());
+            if (checkSettings) {
+              if (cameraHash == cameraDefault) {
+                $("#file-info").removeClass("bad");
+              } else {
+                $("#file-info").addClass("bad");
+                errorSnd();
+              }
+            }
+            document
+              .getElementById("container")
+              .setAttribute("data-content", msg.filename);
+            document.getElementById("filename").innerText = msg.filename;
+            document.getElementById("source").innerText = msg.source.substring(
+              0,
+              msg.source.lastIndexOf("\\")
+            );
+            document.getElementById("target").innerText = msg.target.substring(
+              0,
+              msg.target.lastIndexOf("\\")
+            );
+            document.getElementById("ISO").innerText = msg.ISO;
+            document.getElementById("F").innerText = msg.F;
+            document.getElementById("SS").innerText = msg.SS;
+            document.getElementById("EV").innerText = msg.EV;
+            document.getElementById("camera_mode").innerText = msg.mode;
+            if (msg.flash.includes("not")) {
+              document.getElementById("flash").innerText = "flash_off";
+              document.getElementById("flash_mode").innerText = "off";
             } else {
-              $('#file-info').addClass("bad");
-              errorSnd();
+              document.getElementById("flash").innerText = "flash_on";
+              document.getElementById("flash_mode").innerText = "on";
             }
           }
-          document.getElementById("container").setAttribute('data-content', msg.filename);
-          document.getElementById("filename").innerText = msg.filename;
-          document.getElementById("source").innerText = msg.source.substring(0, msg.source.lastIndexOf(
-            "\\"));
-          document.getElementById("target").innerText = msg.target.substring(0, msg.target.lastIndexOf(
-            "\\"));
-          document.getElementById("ISO").innerText = msg.ISO;
-          document.getElementById("F").innerText = msg.F;
-          document.getElementById("SS").innerText = msg.SS;
-          document.getElementById("EV").innerText = msg.EV;
-          document.getElementById("camera_mode").innerText = msg.mode;
-          if (msg.flash.includes("not")) {
-            document.getElementById("flash").innerText = "flash_off";
-            document.getElementById("flash_mode").innerText = "off";
-          } else {
-            document.getElementById("flash").innerText = "flash_on";
-            document.getElementById("flash_mode").innerText = "on";
-          }
+        }
+        if (msg.ISO == null || msg.ISO == "") {
+          $("#exif").addClass("hide-menu-item");
+        } else {
+          $("#exif").removeClass("hide-menu-item");
+        }
+
+        if (quicksort && firstFile) {
+          $("#triage").removeClass("hide");
+          firstFile = false;
+        }
+
+        // reset quicksort for each file
+        $("#star").show();
+        $("#discard").show();
+        $("#keep").show();
+        $("#review").show();
+
+        checkColors();
+      });
+
+      function deleteFromTarget() {
+        socket.emit(
+          "delete target",
+          document.getElementById("container").getAttribute("data-content")
+        );
+      }
+
+      function deleteFromCamera() {
+        let confirmAction = confirm(
+          "WARNING! Are you sure you want to delete the original photo? This action cannot be undone."
+        );
+        if (confirmAction) {
+          // alert("Source file deleted");
+          socket.emit(
+            "delete camera",
+            document.getElementById("container").getAttribute("data-content")
+          );
+        } else {
         }
       }
-      if ((msg.ISO == null) || (msg.ISO == "")) {
-        $('#exif').addClass("hide-menu-item")
-      } else {
-        $('#exif').removeClass("hide-menu-item")
+
+      function copyFile() {
+        socket.emit("copy source", sourceFile);
       }
 
-      if (quicksort && firstFile) {
-        $("#triage").removeClass("hide");
-        firstFile = false;
+      function quickSort(action) {
+        socket.emit("sort", action);
+        $("#triage").addClass("done");
+        switch (action) {
+          case "keep":
+            $("#discard").hide();
+            $("#star").hide();
+            $("#review").hide();
+            break;
+          case "discard":
+            $("#keep").hide();
+            $("#star").hide();
+            $("#review").hide();
+            break;
+          case "star":
+            $("#keep").hide();
+            $("#discard").hide();
+            $("#review").hide();
+          case "review":
+            $("#keep").hide();
+            $("#discard").hide();
+            $("#star").hide();
+            break;
+          default:
+        }
       }
 
-      // reset quicksort for each file
-      $('#star').show();
-      $('#discard').show();
-      $('#keep').show();
-      $('#review').show();
+      var targetfolder,
+        sourcefolder,
+        extenstion,
+        autocopy,
+        quicksort,
+        showgrid,
+        remoteaddress;
 
-      checkColors();
+      socket.on("exepath", function (msg) {
+        console.log(msg);
+        exePath = msg;
+      });
 
-    });
+      socket.on("config", function (msg) {
+        // console.log(msg);
+        let config = msg;
+        targetfolder = config.target;
+        sourcefolder = config.source;
+        $("#file-info").html(
+          '<span class="dot"></span>Watching folder ' + sourcefolder
+        );
+        $("#file-info").removeClass("ng");
+        $("#file-info").addClass("ok");
+        extenstion = config.extension;
+        autocopy = config.settings.autocopy;
+        showgrid = config.settings.showgrid;
+        quicksort = config.settings.quicksort;
+        playAudio = config.settings.playaudio;
+        checkSettings = config.settings.checksettings;
+        cameraDefault = hashCode(config.defaults);
+        previousReference = config.settings.previousreference;
+        document.getElementById("source").innerText = msg.source.substring(
+          0,
+          msg.source.lastIndexOf("\\")
+        );
+        document.getElementById("target").innerText = msg.target.substring(
+          0,
+          msg.target.lastIndexOf("\\")
+        );
+        $("#source-menu-item").attr(
+          "title",
+          "Click to copy source folder\n " +
+            msg.source.substring(0, msg.source.lastIndexOf("\\"))
+        );
+        $("#target-menu-item").attr(
+          "title",
+          "Click to copy target folder\n " +
+            msg.target.substring(0, msg.target.lastIndexOf("\\"))
+        );
 
-    function deleteFromTarget() {
-      socket.emit('delete target', document.getElementById("container").getAttribute('data-content'));
-    }
+        remoteaddress = config.remoteaddress;
+        console.log(remoteaddress);
 
-    function deleteFromCamera() {
-      let confirmAction = confirm(
-        "WARNING! Are you sure you want to delete the original photo? This action cannot be undone.");
-      if (confirmAction) {
-        // alert("Source file deleted");
-        socket.emit('delete camera', document.getElementById("container").getAttribute('data-content'));
-      } else {}
-    }
+        if (autocopy) {
+          console.log("autocopy on");
+          $(".copy-file").addClass("hide-menu-item");
+        } else {
+          console.log("autocopy off");
+          $(".copy-file").removeClass("hide-menu-item");
+          $(".delete-copy").addClass("hide-menu-item");
+        }
 
-    function copyFile() {
-      socket.emit('copy source', sourceFile);
-    }
+        if (showgrid) {
+          console.log("grid on");
+          $("#image").addClass("grid");
+          document.getElementById("grid_toggle").innerText = "grid_off";
+        } else {
+          console.log("grid off");
+          $("#image").removeClass("grid");
+          document.getElementById("grid_toggle").innerText = "grid_on";
+        }
 
+        if (quicksort) {
+          console.log("quicksort on");
+          $(".copy-file").addClass("hide-menu-item");
+          // $('.quick-sort').addClass("hide-menu-item");
+          // $("#triage").removeClass("hide"); // hide untill first picture loaded
+          $(".delete-copy").addClass("hide-menu-item");
+        } else {
+          console.log("quicksort off");
+          $("#triage").addClass("hide");
+          $(".quick-sort").removeClass("hide-menu-item");
+        }
+      });
 
-    function quickSort(action) {
-      socket.emit('sort', action);
-      $("#triage").addClass("done");
-      switch (action) {
-        case "keep":
-          $('#discard').hide();
-          $('#star').hide();
-          $('#review').hide();
-          break;
-        case "discard":
-          $('#keep').hide();
-          $('#star').hide();
-          $('#review').hide();
-          break;
-        case "star":
-          $('#keep').hide();
-          $('#discard').hide();
-          $('#review').hide();
-        case "review":
-          $('#keep').hide();
-          $('#discard').hide();
-          $('#star').hide();
-          break;
-        default:
-      }
-    }
+      $(document).ready(function () {
+        console.log("DOM ready");
 
+        // get configuration
+        // socket.emit('getconfig', "hi there!")
 
+        // Setup our variables
+        var cH = $("#crosshair-h"),
+          cV = $("#crosshair-v");
 
+        $(this).on("mousemove touchmove", function (e) {
+          var x = e.pageX - 1;
+          var y = e.pageY - 1;
+          cH.css("top", e.pageY);
+          cV.css("left", e.pageX);
 
-    var targetfolder, sourcefolder, extenstion, autocopy, quicksort, showgrid, remoteaddress
-
-    socket.on('exepath', function (msg) {
-      console.log(msg);
-      exePath = msg;
-    })
-
-    socket.on('config', function (msg) {
-      // console.log(msg);
-      let config = msg;
-      targetfolder = config.target;
-      sourcefolder = config.source;
-      $('#file-info').html('<span class="dot"></span>Watching folder ' + sourcefolder);
-      $('#file-info').removeClass("ng");
-      $('#file-info').addClass("ok");
-      extenstion = config.extension;
-      autocopy = config.settings.autocopy;
-      showgrid = config.settings.showgrid;
-      quicksort = config.settings.quicksort;
-      playAudio = config.settings.playaudio;
-      checkSettings = config.settings.checksettings;
-      cameraDefault = hashCode(config.defaults);
-      previousReference = config.settings.previousreference;
-      document.getElementById("source").innerText = msg.source.substring(0, msg.source.lastIndexOf("\\"));
-      document.getElementById("target").innerText = msg.target.substring(0, msg.target.lastIndexOf("\\"));
-      $("#source-menu-item").attr("title", "Click to copy source folder\n " + msg.source.substring(0, msg.source
-        .lastIndexOf("\\")));
-      $("#target-menu-item").attr("title", "Click to copy target folder\n " + msg.target.substring(0, msg.target
-        .lastIndexOf("\\")));
-
-      remoteaddress = config.remoteaddress;
-      console.log(remoteaddress);
-
-      if (autocopy) {
-        console.log("autocopy on");
-        $('.copy-file').addClass("hide-menu-item");
-      } else {
-        console.log("autocopy off");
-        $('.copy-file').removeClass("hide-menu-item");
-        $('.delete-copy').addClass("hide-menu-item");
-      }
-
-      if (showgrid) {
-        console.log("grid on")
-        $("#image").addClass("grid");
-        document.getElementById("grid_toggle").innerText = "grid_off";
-      } else {
-        console.log("grid off")
-        $("#image").removeClass("grid");
-        document.getElementById("grid_toggle").innerText = "grid_on";
-      }
-
-      if (quicksort) {
-        console.log("quicksort on")
-        $('.copy-file').addClass("hide-menu-item");
-        // $('.quick-sort').addClass("hide-menu-item");
-        // $("#triage").removeClass("hide"); // hide untill first picture loaded
-        $(".delete-copy").addClass("hide-menu-item");
-      } else {
-        console.log("quicksort off")
-        $("#triage").addClass("hide");
-        $('.quick-sort').removeClass("hide-menu-item");
-
-
-      }
-
-    });
-
-
-
-    $(document).ready(function () {
-      console.log("DOM ready")
-
-      // get configuration
-      // socket.emit('getconfig', "hi there!")
-
-
-      // Setup our variables
-      var cH = $('#crosshair-h'),
-        cV = $('#crosshair-v');
-
-      $(this).on('mousemove touchmove', function (e) {
-        var x = e.pageX - 1;
-        var y = e.pageY - 1;
-        cH.css('top', e.pageY);
-        cV.css('left', e.pageX);
-
-        /* $('#file-info').css({
+          /* $('#file-info').css({
             top: e.pageY + 'px',
             left: e.pageX + 'px'
         }, 800); */
-        // $('#file-info').text( "X: " + x + "px, Y: " + y + "px");
-        e.stopPropagation();
+          // $('#file-info').text( "X: " + x + "px, Y: " + y + "px");
+          e.stopPropagation();
+        });
+
+        $("#container").mouseleave(function () {
+          $(".hair").hide();
+          if (!splashScreen || !showWarning) {
+            $("#file-info").hide();
+          }
+          if (hideGridOnMouseOver && showgrid) {
+            $("#image").addClass("grid");
+          }
+        });
+
+        $("#container").mouseenter(function () {
+          if (showCrosshair) {
+            $(".hair").show();
+            if (hideGridOnMouseOver && showgrid) {
+              $("#image").removeClass("grid");
+            }
+          }
+          if (!($("#file-info").text() == "")) {
+            if (showFileinfo) {
+              $("#file-info").show();
+            }
+          }
+        });
+
+        new ClipboardJS(".clip");
       });
 
-      $("#container").mouseleave(function () {
-        $(".hair").hide();
-        if ((!splashScreen) || (!showWarning)) {
-          $("#file-info").hide();
-        }
-        if (hideGridOnMouseOver && showgrid) {
+      window.addEventListener("load", function () {
+        console.log("Page content loaded");
+        if (showgrid) {
           $("#image").addClass("grid");
         }
-      });
 
-      $("#container").mouseenter(function () {
-        if (showCrosshair) {
-          $(".hair").show();
-          if (hideGridOnMouseOver && showgrid) {
-            $("#image").removeClass("grid");
+        checkColors();
+
+        const divDelete = document.querySelector("#delete_original");
+        divDelete.addEventListener(
+          "click",
+          function (e) {
+            if (e.ctrlKey) {
+              deleteFromCamera();
+            }
+          },
+          false
+        );
+
+        var canvas = document.getElementById("guides");
+        var context = canvas.getContext("2d");
+
+        // http://jsfiddle.net/PgKEt/2/
+        canvas.addEventListener("click", function (event) {
+          const shift = event.getModifierState("Shift");
+          const ctrl = event.getModifierState("Control");
+          //const alt = event.getModifierState("Alt");
+          if (ctrl && shift) {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+          } else if (ctrl && !shift) {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            var x = event.pageX - canvas.offsetLeft;
+            var y = event.pageY - canvas.offsetTop;
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.beginPath();
+            context.moveTo(0, y - 4); // offset crosshair
+            context.lineTo(3000, y);
+            context.moveTo(x - 2, 0); // offset crosshair
+            context.lineTo(x, 3000);
+            context.strokeStyle = "blue";
+            context.stroke();
+            context.closePath();
           }
-        }
-        if (!($('#file-info').text() == "")) {
-          if (showFileinfo) {
-            $('#file-info').show();
-          }
-        }
+        });
       });
 
-      new ClipboardJS('.clip');
-
-    });
-
-    window.addEventListener('load', function () {
-      console.log("Page content loaded")
-      if (showgrid) {
-        $("#image").addClass("grid");
+      // https://riptutorial.com/html5-canvas/example/9061/image-cropping-using-canvas
+      function cropImage(image, croppingCoords) {
+        var cc = croppingCoords;
+        var workCan = document.createElement("canvas"); // create a canvas
+        workCan.width = Math.floor(cc.width); // set the canvas resolution to the cropped image size
+        workCan.height = Math.floor(cc.height);
+        var ctx = workCan.getContext("2d"); // get a 2D rendering interface
+        ctx.drawImage(image, -Math.floor(cc.x), -Math.floor(cc.y)); // draw the image offset to place it correctly on the cropped region
+        //image.src = workCan.toDataURL();       // set the image source to the canvas as a data URL
+        return workCan; //image; // workCan.toDataURL('image/jpeg', 1.0);
       }
 
-      checkColors();
-
-      const divDelete = document.querySelector('#delete_original');
-      divDelete.addEventListener("click",
-        function (e) {
-          if (e.ctrlKey) {
-            deleteFromCamera();
-          }
-        },
-        false);
-
-
-      var canvas = document.getElementById("guides");
-      var context = canvas.getContext("2d");
-
-      // http://jsfiddle.net/PgKEt/2/
-      canvas.addEventListener("click", function (event) {
-        const shift = event.getModifierState("Shift");
-        const ctrl = event.getModifierState("Control");
-        //const alt = event.getModifierState("Alt");
-        if (ctrl && shift) {
-          context.clearRect(0, 0, canvas.width, canvas.height);
-        } else if (ctrl && !(shift)) {
-          canvas.width = canvas.offsetWidth;
-          canvas.height = canvas.offsetHeight;
-          var x = event.pageX - canvas.offsetLeft;
-          var y = event.pageY - canvas.offsetTop;
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.beginPath();
-          context.moveTo(0, y - 4); // offset crosshair
-          context.lineTo(3000, y);
-          context.moveTo(x - 2, 0); // offset crosshair
-          context.lineTo(x, 3000);
-          context.strokeStyle = "blue";
-          context.stroke();
-          context.closePath();
+      function checkColors() {
+        const img = cropImage(document.querySelector("img#photo"), {
+          x: 10,
+          y: 10,
+          width: 100,
+          height: 100,
+        });
+        var mainColor = colorThief.getColor(img);
+        if (
+          lightOrDark(rgbToHex(mainColor[0], mainColor[1], mainColor[2])) ==
+          "dark"
+        ) {
+          console.log("dark");
+          $(".hair").addClass("light");
+          $("#image").removeClass("dark");
+        } else {
+          console.log("light");
+          $(".hair").removeClass("light");
+          $("#image").addClass("dark");
         }
-      });
-
-
-
-    })
-
-    // https://riptutorial.com/html5-canvas/example/9061/image-cropping-using-canvas
-    function cropImage(image, croppingCoords) {
-      var cc = croppingCoords;
-      var workCan = document.createElement("canvas"); // create a canvas
-      workCan.width = Math.floor(cc.width); // set the canvas resolution to the cropped image size
-      workCan.height = Math.floor(cc.height);
-      var ctx = workCan.getContext("2d"); // get a 2D rendering interface
-      ctx.drawImage(image, -Math.floor(cc.x), -Math.floor(cc
-        .y)); // draw the image offset to place it correctly on the cropped region
-      //image.src = workCan.toDataURL();       // set the image source to the canvas as a data URL
-      return workCan; //image; // workCan.toDataURL('image/jpeg', 1.0);
-    }
-
-
-
-    function checkColors() {
-      const img = cropImage(document.querySelector('img#photo'), {
-        x: 10,
-        y: 10,
-        width: 100,
-        height: 100
-      });
-      var mainColor = colorThief.getColor(img);
-      if (lightOrDark(rgbToHex(mainColor[0], mainColor[1], mainColor[2])) == "dark") {
-        console.log("dark");
-        $(".hair").addClass("light");
-        $("#image").removeClass("dark")
-      } else {
-        console.log("light");
-        $(".hair").removeClass("light");
-        $("#image").addClass("dark")
-      };
-    }
-
-
-    function componentToHex(c) {
-      var hex = c.toString(16);
-      return hex.length == 1 ? "0" + hex : hex;
-    }
-
-    function rgbToHex(r, g, b) {
-      return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
-    }
-
-    //rgbToHex(102, 51, 153); // #663399
-
-    // https://codepen.io/andreaswik/pen/YjJqpK
-    function lightOrDark(color) {
-
-      // Variables for red, green, blue values
-      var r, g, b, hsp;
-
-      // Check the format of the color, HEX or RGB?
-      if (color.match(/^rgb/)) {
-
-        // If RGB --> store the red, green, blue values in separate variables
-        color = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(?:\.\d+)?))?\)$/);
-
-        r = color[1];
-        g = color[2];
-        b = color[3];
-      } else {
-
-        // If hex --> Convert it to RGB: http://gist.github.com/983661
-        color = +("0x" + color.slice(1).replace(
-          color.length < 5 && /./g, '$&$&'));
-
-        r = color >> 16;
-        g = color >> 8 & 255;
-        b = color & 255;
       }
 
-      // HSP (Highly Sensitive Poo) equation from http://alienryderflex.com/hsp.html
-      hsp = Math.sqrt(
-        0.299 * (r * r) +
-        0.587 * (g * g) +
-        0.114 * (b * b)
-      );
-
-      // Using the HSP value, determine whether the color is light or dark
-      if (hsp > 127.5) {
-
-        return 'light';
-      } else {
-
-        return 'dark';
-      }
-    }
-  </script>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
-
-    img#photo {
-      top: 0;
-      left: 0;
-      max-width: 100%;
-      max-height: 100vh;
-      display: block;
-      /* remove extra space below image */
-    }
-
-    img#reference {
-      top: 0;
-      left: 0;
-      max-width: 100%;
-      max-height: 100vh;
-      position: relative;
-      display: none;
-      /* remove extra space below image */
-    }
-
-    #container {
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      -khtml-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-      position: relative;
-      display: grid;
-      width: fit-content;
-      height: fit-content;
-      border: 1px solid black;
-    }
-
-    #reference {
-      position: absolute;
-      display: none;
-      z-index: 10;
-    }
-
-    #guides {
-      cursor: default;
-      width: 100%;
-      height: 100%;
-      position: absolute;
-    }
-
-    #image {
-      width: fit-content;
-      height: fit-content;
-    }
-
-    #zoom {
-      position: absolute;
-      cursor: zoom-in;
-    }
-
-    #reference {
-      display: none;
-    }
-
-    .grid {
-      display: inline-block;
-      position: relative;
-      vertical-align: top;
-    }
-
-    .grid::before,
-    .grid::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to right, #ccc 1px, transparent 1px);
-      background-size: 10%;
-    }
-
-    .grid::before {
-      box-shadow: inset 0px 0px 0 1px #ccc;
-    }
-
-    .grid::after {
-      transform: rotate(90deg);
-    }
-
-    .grid.dark::before,
-    .grid.dark::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to right, rgb(65, 65, 65) 1px, transparent 1px);
-      background-size: 10%;
-    }
-
-    .grid.dark::before {
-      box-shadow: inset 0px 0px 0 1px rgb(65, 65, 65);
-    }
-
-
-    .slider-container .slider-wrap .slider-btn {
-      width: 1px;
-    }
-
-    .slider-container .slider-wrap .slider-btn:hover {
-      background: rgba(0, 0, 0, 0.5);
-      width: 8px;
-    }
-
-    .slider-container .slider-wrap .slider-btn::after {
-      background-color: rgb(0 0 0 / 0%);
-      content: '';
-      box-shadow: none;
-    }
-
-    #crosshair-h {
-      z-index: 100;
-      width: 100%;
-    }
-
-    #crosshair-v {
-      z-index: 100;
-      height: 100%;
-    }
-
-    .hair {
-      position: fixed;
-      top: 0;
-      left: 0;
-      margin-top: -3px;
-      margin-left: -2px;
-      background: transparent;
-      border-top: 1px dotted #000;
-      border-left: 1px dotted #000;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .hair.light {
-      border-top: 1px dotted #fff;
-      border-left: 1px dotted #fff;
-    }
-
-    .hide {
-      display: none;
-    }
-
-    #file-info {
-      display: none;
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      padding: 10px;
-      margin: 10px;
-      font: 14px arial;
-      color: #fff;
-      background: rgba(0, 0, 0, 0.5);
-      border-radius: 24px;
-      z-index: 9;
-    }
-
-    #file-info:hover {
-      top: 0;
-      left: 0;
-      width: fit-content;
-      height: fit-content;
-    }
-
-    #file-info.ok {
-      color: white;
-      background: rgba(0, 0, 0, 0.5);
-    }
-
-    /* green rgba(0, 128, 0, 0.5); */
-
-    #file-info.ng {
-      color: red;
-      background: rgba(0, 0, 0, 0.5);
-    }
-
-    #file-info.bad {
-      background: rgb(255 0 0 / 50%);
-    }
-
-    /* red rgba(255, 0, 0, 0.25) */
-
-    #camera_mode {
-      display: inline-block;
-      font-weight: bold;
-      text-align: center;
-      border-radius: 10%;
-      width: 25px;
-      height: 12px;
-      color: #999999;
-      font-size: smaller;
-      background-color: #eee;
-    }
-
-    /* Group same frames together */
-    @keyframes blink {
-
-      0%,
-      100% {
-        opacity: 0;
+      function componentToHex(c) {
+        var hex = c.toString(16);
+        return hex.length == 1 ? "0" + hex : hex;
       }
 
-      /* more concise! */
-      50% {
-        opacity: 1;
+      function rgbToHex(r, g, b) {
+        return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
       }
-    }
 
-    .dot {
-      animation: blink 1s infinite;
-      float: left;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: greenyellow;
-      margin-right: 6px;
-    }
+      //rgbToHex(102, 51, 153); // #663399
 
-    .dot.warning {
-      background: red;
-    }
+      // https://codepen.io/andreaswik/pen/YjJqpK
+      function lightOrDark(color) {
+        // Variables for red, green, blue values
+        var r, g, b, hsp;
 
-    #triage {
-      z-index: 10;
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      margin: 10px;
-      background: rgba(0, 0, 0, 0);
-    }
+        // Check the format of the color, HEX or RGB?
+        if (color.match(/^rgb/)) {
+          // If RGB --> store the red, green, blue values in separate variables
+          color = color.match(
+            /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+(?:\.\d+)?))?\)$/
+          );
 
-    #triage {
-      position: absolute;
-      z-index: 1;
-    }
+          r = color[1];
+          g = color[2];
+          b = color[3];
+        } else {
+          // If hex --> Convert it to RGB: http://gist.github.com/983661
+          color = +(
+            "0x" + color.slice(1).replace(color.length < 5 && /./g, "$&$&")
+          );
 
-    #triage .material-icons {
-      position: relative;
-      display: inline-block;
-      font-size: 50px;
-      cursor: pointer;
-      margin-right: 10px;
-      margin-top: 10px;
-      transition: all .2s ease-in-out;
-    }
+          r = color >> 16;
+          g = (color >> 8) & 255;
+          b = color & 255;
+        }
 
-    #triage .material-icons:hover {
-      transform: scale(1.2);
-    }
+        // HSP (Highly Sensitive Poo) equation from http://alienryderflex.com/hsp.html
+        hsp = Math.sqrt(0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b));
 
-    div#discard::after {
-      content: ' ';
-      top: 16px;
-      left: 8px;
-      position: absolute;
-      width: 34px;
-      height: 22px;
-      background: #f6b3ad;
-      z-index: -1;
-    }
-
-
-    div#review::after {
-      content: ' ';
-      top: 16px;
-      left: 8px;
-      position: absolute;
-      width: 34px;
-      height: 22px;
-      background: #c9f0f8;
-      z-index: -1;
-    }
-
-    div#star::after {
-      content: ' ';
-      top: 16px;
-      left: 8px;
-      position: absolute;
-      width: 34px;
-      height: 22px;
-      background: #feebb3;
-      z-index: -1;
-    }
-
-    #triage #discard,
-    .discard {
-      color: #ee685c;
-    }
-
-    #triage #keep,
-    .keep {
-      color: #34a853;
-    }
-
-    #triage #review,
-    .review {
-      color: #4ecde6;
-    }
-
-    #triage #star,
-    .star {
-      color: #fbbc04;
-    }
-
-    /* #669df6 */
-
-    #triage.done {
-      /* opacity: 0.5; */
-      filter: grayscale(50%);
-      pointer-events: none;
-    }
-
-    #context-menu {
-      transform: scale(0);
-      transform-origin: top left;
-    }
-
-    #context-menu {
-      z-index: 10000;
-      width: 220px;
-      background: #999999;
-      border-radius: 5px;
-      --mouse-x: 0;
-      --mouse-y: 0;
-      display: none;
-      position: fixed;
-      margin: 0;
-      left: 0;
-      top: 0;
-      /* The following line is responsible for all the magic */
-      transform: translateX(min(var(--mouse-x), calc(100vw - 100%))) translateY(min(var(--mouse-y), calc(100vh - 100%)));
-    }
-
-
-    #context-menu.active {
-      transform: scale(1);
-      transition: transform 200ms ease-in-out;
-    }
-
-    #context-menu .item {
-      padding: 8px 10px;
-      font-size: 18px;
-      font-family: Calibri, sans-serif;
-      color: #eee;
-      cursor: pointer;
-    }
-
-    #context-menu .item:hover {
-      background: #454545;
-    }
-
-    #context-menu .item:hover:nth-of-type(1) {
-      border-top-left-radius: 5px;
-      border-top-right-radius: 5px;
-      background: #454545;
-    }
-
-    #context-menu .item:hover div div {
-      color: #454545;
-    }
-
-    #context-menu .item.warning:hover {
-      background: #454545;
-      color: rgb(255, 0, 0);
-    }
-
-    #context-menu .item i {
-      display: inline-block;
-      margin-right: 5px;
-    }
-
-    #context-menu hr {
-      margin: 2px 4px;
-      border: 1px solid #999999;
-      border-color: #999999;
-    }
-
-    .hide-menu-item {
-      display: none;
-    }
-
-    .show-menu-item {
-      display: block;
-    }
-
-    .material-icons {
-      display: inline-flex;
-      vertical-align: top;
-      margin-right: 4px;
-      font-size: 24px;
-    }
-
-    #context-menu .item#exif div {
-      font-size: 16px;
-      padding-bottom: 8px;
-    }
-
-    .item#exif .material-icons {
-      font-size: 20px;
-    }
-
-    .debug {
-      display: none;
-    }
-
-
-    .truncate {
-      display: inline-block;
-      max-width: 160px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-
-    .close-button {
-      position: absolute;
-      top: 0;
-      right: 0;
-      margin-top: 10px;
-      margin-right: 10px;
-      cursor: pointer;
-      z-index: 99;
-    }
-
-    .close-button .material-icons {
-      font-size: 30px;
-      color: #aaa;
-      display: inline-block;
-      border: 0px solid white;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.8);
-      width: 34px;
-      height: 34px;
-      text-align: center;
-      line-height: 34px;
-    }
-
-    .zoomist-slider {
-      position: absolute;
-      z-index: 2;
-      top: 25%;
-      left: 0;
-      background-color: rgba(255, 255, 255, 0.8);
-      border-radius: 0 5px 5px 0;
-      cursor: pointer;
-    }
-
-    .zoomist-slider-bar {
-      background-color: #aaa;
-    }
-
-    .zoomist-slider-button {
-      cursor: pointer;
-    }
-
-
-    /* ----------- */
-    .gridlines {
-      display: none;
-      position: absolute;
-      background-color: #ccc;
-    }
-  </style>
-</head>
-
-<body>
-  <div id="context-menu">
-    <div class="item copy-file" onclick="copyFile();">
-      <span class="material-icons">file_copy</span> Copy Photo
-    </div>
-    <hr class="copy-file" />
-    <div class="item delete-copy" onclick="deleteFromTarget();">
-      <span class="material-icons">delete</span> Delete Copy
-    </div>
-    <div class="item warning hide-menu-item" id="delete_original" title="Ctrl-click to delete">
-      <span class="material-icons">sd_card</span> Delete Original
-    </div>
-    <div class="item save-file" id="save_file" title="Save the current file" onclick="saveFile();">
-      <span class="material-icons">save</span> Save current file
-    </div>
-    <hr />
-    <div class="item" onclick="toggleGrid();">
-      <span id="grid_toggle" class="material-icons">grid_off</span> Grid on/off
-    </div>
-    <div class="item" onclick="toggleCrosshair();">
-      <span id="grid_crosshair" class="material-icons">add</span> Crosshair on/off
-    </div>
-    <div class="item" onclick="toggleZoom();">
-      <span id="zoom_toggle" class="material-icons">zoom_in</span> Zoom View on/off
-    </div>
-    <div class="item" onclick="toggleCompare();">
-      <span id="zoom_compare" class="material-icons">compare</span> Compare View on/off
-    </div>
-    <div class="item quick-sort" onclick="toggleQuickSort();">
-      <span id="quick_sort" class="material-icons">category</span> Show/hide Quick Sort
-    </div>
-    <div class="item quick-sort" onclick="toggleFileinfo();">
-      <span id="file_info" class="material-icons">text_snippet</span> Show/hide Info
-    </div>
-    <hr />
-    <div class="item clip hide-menu-item filename" id="filename-menu-item" data-clipboard-target="#filename"
-      title="Click to copy filename">
-      <span class="material-icons">image</span>
-      <div class="truncate" id="filename">Filename</div>
-    </div>
-    <div class="item clip" id="source-menu-item" data-clipboard-target="#source" title="Click to copy source folder">
-      <span class="material-icons">photo_camera</span>
-      <div class="truncate" id="source">Source Folder</div>
-    </div>
-    <div class="item clip" id="target-menu-item" data-clipboard-target="#target" title="Click to copy target folder">
-      <span class="material-icons">desktop_windows</span>
-      <div class="truncate" id="target">Target Folder</div>
-    </div>
-    <hr />
-    <div class="item clip hide-menu-item" id="exif" data-clipboard-text="" title="Click to copy settings">
-      <div>
-        <div id="camera_mode"></div> &nbsp;<span class="material-icons">camera</span><span id="F"></span>
-        <span class="material-icons">shutter_speed</span>SS <span id="SS"></span>
-      </div>
-      <div><span class="material-icons">camera_roll</span>ISO <span id="ISO"></span>
-        <span class="material-icons">iso</span><span id="EV"></span> EV
-        <span id="flash" class="material-icons">flash_on</span><span id="flash_mode"></span></div>
-    </div>
-    <div class="item" title="Show help" onclick="showHelp();">
-      <span class="material-icons">help_outline</span> <span>Help</span>
-    </div>
-    <hr />
-  </div>
-  <div id="crosshair-h" class="hair"></div>
-  <div id="crosshair-v" class="hair"></div>
-  <div id="container" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
-    <canvas id="guides"></canvas>
-    <div id="triage" class="hide">
-      <div id="keep" onClick="quickSort('keep')" title="Keep" class="material-icons keep">folder</div>
-      <div id="star" onClick="quickSort('star')" title="Star" class="material-icons star">folder_special</div>
-      <div id="review" onClick="quickSort('review')" title="Review" class="material-icons review">rule_folder</div>
-      <div id="discard" onClick="quickSort('discard')" title="Discard" class="material-icons discard">folder_delete
-      </div>
-    </div>
-    <span id="file-info">Drag and drop an image file or connect a device. Press F1 for help</span>
-    <div id="image">
-      <img id="photo"
-        src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgd2lkdGg9IjEwMDAiCiAgIGhlaWdodD0iMTAwMCIKICAgdmlld0JveD0iMCAwIDI2NC41ODMgMjY0LjU4MyIKICAgdmVyc2lvbj0iMS4xIgogICBpZD0ic3ZnMTYiCiAgIHNvZGlwb2RpOmRvY25hbWU9InRpdGxlLW1pbi5zdmciCiAgIGlua3NjYXBlOnZlcnNpb249IjEuMSAoYzY4ZTIyYzM4NywgMjAyMS0wNS0yMykiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPGRlZnMKICAgICBpZD0iZGVmczIwIiAvPgogIDxzb2RpcG9kaTpuYW1lZHZpZXcKICAgICBpZD0ibmFtZWR2aWV3MTgiCiAgICAgcGFnZWNvbG9yPSIjZmZmZmZmIgogICAgIGJvcmRlcmNvbG9yPSIjNjY2NjY2IgogICAgIGJvcmRlcm9wYWNpdHk9IjEuMCIKICAgICBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIgogICAgIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwLjAiCiAgICAgaW5rc2NhcGU6cGFnZWNoZWNrZXJib2FyZD0iMCIKICAgICBzaG93Z3JpZD0iZmFsc2UiCiAgICAgaW5rc2NhcGU6em9vbT0iMC44MzIiCiAgICAgaW5rc2NhcGU6Y3g9IjQ5OS4zOTkwNCIKICAgICBpbmtzY2FwZTpjeT0iNTAwLjYwMDk2IgogICAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgICBpbmtzY2FwZTp3aW5kb3ctaGVpZ2h0PSIxMDE3IgogICAgIGlua3NjYXBlOndpbmRvdy14PSIxOTEyIgogICAgIGlua3NjYXBlOndpbmRvdy15PSItOCIKICAgICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIgogICAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9InN2ZzE2IiAvPgogIDxwYXRoCiAgICAgc3R5bGU9Im9wYWNpdHk6Ljk5NTtmaWxsOiMwMDA7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlLXdpZHRoOi4yNjQ1ODQ7c3Ryb2tlLWxpbmVjYXA6c3F1YXJlO3N0cm9rZS1vcGFjaXR5Oi41IgogICAgIGQ9Ik0wIDBoMjY0LjU4M3YyNjQuNTgzSDB6IgogICAgIGlkPSJiYWNrZ3JvdW5kIiAvPgogIDxnCiAgICAgYXJpYS1sYWJlbD0iU1lOQyIKICAgICBzdHlsZT0iZm9udC1zaXplOjE2LjkzMzNweDtsaW5lLWhlaWdodDoxLjU2O2ZvbnQtZmFtaWx5OmNvbnNvbGFzOy1pbmtzY2FwZS1mb250LXNwZWNpZmljYXRpb246J2NvbnNvbGFzLCBOb3JtYWwnO2xldHRlci1zcGFjaW5nOjE3LjI3NzNweDtmaWxsOiNmZmY7c3Ryb2tlLXdpZHRoOi4yNjQ1ODMiCiAgICAgaWQ9ImxpbmUzIj4KICAgIDxwYXRoCiAgICAgICBkPSJNMTYuNzEgNjguNjlxMCAuNzctLjMxNCAxLjM0OC0uMzE0LjU3OS0uODc3Ljk2Ny0uNTYyLjM4LTEuMzU2LjU3MS0uNzg1LjE5LTEuNzM2LjE5LS40MyAwLS44Ni0uMDMzLS40MjEtLjAzMy0uODE4LS4wODMtLjM4OS0uMDUtLjczNi0uMTE1LS4zNDctLjA2Ny0uNjI5LS4xNHYtMS40MjNxLjYyLjIzMSAxLjM5LjM2NC43NzcuMTMyIDEuNzYuMTMyLjcxMiAwIDEuMjA4LS4xMDcuNTA0LS4xMTYuODE4LS4zMzEuMzIzLS4yMjMuNDYzLS41MzguMTUtLjMxNC4xNS0uNzE5IDAtLjQzOC0uMjQ5LS43NDQtLjI0LS4zMTQtLjYzNy0uNTU0LS4zOTYtLjI0OC0uOTA5LS40NDdsLTEuMDM0LS40MjFxLS41MjktLjIxNS0xLjA0MS0uNDYzLS41MDUtLjI1Ny0uOTAyLS41OTYtLjM5Ni0uMzQ3LS42NDQtLjgxLS4yNC0uNDYzLS4yNC0xLjEgMC0uNTUzLjIzMS0xLjA5LjIzMi0uNTM4LjcyLS45NTIuNDg3LS40MjEgMS4yNDgtLjY3OC43NjktLjI1NiAxLjgyNy0uMjU2LjI3MyAwIC41ODcuMDI1LjMyMy4wMjUuNjQ1LjA3NC4zMzEuMDQxLjY0NS4xLjMyMy4wNTcuNTk2LjEyM3YxLjMyM3EtLjYzNy0uMTgyLTEuMjc0LS4yNzMtLjYzNi0uMDk5LTEuMjMyLS4wOTktMS4yNjUgMC0xLjg2LjQyMi0uNTk1LjQyMi0uNTk1IDEuMTMzIDAgLjQzOC4yNC43NTIuMjQ3LjMxNC42NDQuNTYyLjM5Ny4yNDguOTAyLjQ1NS41MTIuMTk4IDEuMDQxLjQxMy41My4yMTUgMS4wMzQuNDcyLjUxMi4yNTYuOTEuNjEyLjM5Ni4zNDcuNjM2LjgxOC4yNDguNDcxLjI0OCAxLjExNnpNNDQuMzY0IDYwLjgxbC0zLjkxIDYuOTQ2djMuODYxaC0xLjQ5di0zLjg5NGwtMy45MS02LjkxMmgxLjc3OGwyLjE1IDMuOTUyLjc5MyAxLjU4Ny43MjgtMS40MzggMi4xNzQtNC4xMDF6TTY5Ljk3NiA3MS42MTdoLTEuOTE5bC0zLjE1LTYuNzM4LS45MS0yLjE2N1Y3MS42MTdoLTEuMzcyVjYwLjgxMWgxLjg5NGwzLjAwMSA2LjM4MyAxLjA4MyAyLjQ3MnYtOC44NTVoMS4zNzN6TTk2LjQ1NSA3MS4yMTJxLTEuMjk4LjUzOC0yLjcyLjUzOC0yLjI5IDAtMy41MjItMS4zNjUtMS4yMjQtMS4zNzItMS4yMjQtNC4wNTEgMC0xLjI5OC4zNC0yLjM0OC4zMzgtMS4wNS45NjctMS43NzguNjI4LS43MzYgMS41MjEtMS4xMzMuODkzLS4zOTcgMi0uMzk3Ljc1MyAwIDEuMzk4LjEzMy42NDUuMTI0IDEuMjQuMzg4djEuNDQ3cS0uNTg3LS4zMjItMS4yMTUtLjQ4OC0uNjI4LS4xNzMtMS4zNzItLjE3My0uNzYxIDAtMS4zODEuMjktLjYxMi4yOC0xLjA0Mi44MjYtLjQzLjUzNy0uNjYyIDEuMzIzLS4yMzEuNzc3LS4yMzEgMS43NzggMCAyLjEuODUyIDMuMTY2Ljg1MSAxLjA2NyAyLjQ5NyAxLjA2Ny42OTQgMCAxLjMzLS4xNTcuNjM3LS4xNjYgMS4yMjQtLjQ1NXoiCiAgICAgICBpZD0icGF0aDQiIC8+CiAgPC9nPgogIDxnCiAgICAgYXJpYS1sYWJlbD0iUEhPVE8iCiAgICAgc3R5bGU9ImZvbnQtc2l6ZToxNi45MzMzcHg7bGluZS1oZWlnaHQ6MS41Njtmb250LWZhbWlseTpjb25zb2xhczstaW5rc2NhcGUtZm9udC1zcGVjaWZpY2F0aW9uOidjb25zb2xhcywgTm9ybWFsJztsZXR0ZXItc3BhY2luZzoxNy4yNzczcHg7ZmlsbDojZmZmO3N0cm9rZS13aWR0aDouMjY0NTgzIgogICAgIGlkPSJsaW5lMiI+CiAgICA8cGF0aAogICAgICAgZD0iTTE2Ljg2NyAzNy43MDJxMCAuNjYyLS4yNDggMS4zMTUtLjI0OC42NDUtLjc2OSAxLjE1Ny0uNTIuNTEzLTEuMzMxLjgzNS0uODEuMzE1LTEuOTM1LjMxNWgtMS4zNFY0NS4ySDkuNzc0VjM0LjM5NWgzLjA0M3EuODAyIDAgMS41MzguMTgyLjczNS4xNzMgMS4yOS41Ny41NjIuMzk3Ljg5MiAxLjAyNS4zMzEuNjI5LjMzMSAxLjUzem0tMS41My4wNjZxMC0xLjA0Mi0uNjg2LTEuNTk2LS42NzgtLjU1NC0xLjkwMS0uNTU0aC0xLjUwNXY0LjQ0OWgxLjM3MnExLjMwNyAwIDIuMDEtLjU3LjcxLS41NzEuNzEtMS43Mjl6TTQzLjQ1NCA0NS4yMDFoLTEuNDcxdi00Ljk2aC00LjU0djQuOTZoLTEuNDcxVjM0LjM5NWgxLjQ3MXY0LjU3Mmg0LjU0di00LjU3MmgxLjQ3MXpNNzAuNDk3IDM5LjcyOHEwIDEuNDU1LS4zNDggMi41MTMtLjMzOSAxLjA1OS0uOTI2IDEuNzUzLS41NzkuNjg2LTEuMzY0IDEuMDI1LS43NzcuMzMxLTEuNjQ1LjMzMS0xLjA0MiAwLTEuODItLjM3Mi0uNzY4LS4zOC0xLjI4MS0xLjA5MS0uNTA0LS43MTEtLjc1Mi0xLjcyOC0uMjQ4LTEuMDI2LS4yNDgtMi4zMDcgMC0xLjQzOS4zMzktMi40OTcuMzM5LTEuMDU5LjkxNy0xLjc0NS41ODctLjY5NCAxLjM2NS0xLjAyNS43NzctLjMzOSAxLjY0NS0uMzM5IDEuMDQyIDAgMS44MS4zOC43NzguMzggMS4yOSAxLjA5Mi41MTMuNzAzLjc2MSAxLjcyLjI1NyAxLjAxNy4yNTcgMi4yOXptLTEuNTMuMTA3cTAtLjk1LS4xNDktMS43MzYtLjE0LS43OTQtLjQ2My0xLjM2NC0uMzIyLS41Ny0uODM1LS44ODUtLjUwNC0uMzE0LTEuMjI0LS4zMTQtLjY5NCAwLTEuMTk5LjMzOS0uNDk2LjMzLS44MTguOTEtLjMyMy41Ny0uNDggMS4zNDctLjE1Ny43NjktLjE1NyAxLjYzNyAwIC45Ni4xNDkgMS43NTMuMTQ5Ljc4NS40NjMgMS4zNTYuMzIyLjU2Mi44MjcuODc2LjUwNC4zMTUgMS4yMTUuMzE1LjY5NSAwIDEuMi0uMzMxLjUwNC0uMzQuODI2LS45MS4zMy0uNTc4LjQ4OC0xLjM0Ny4xNTctLjc3LjE1Ny0xLjY0NnpNOTYuODI4IDM1LjY1MmgtMy4ydjkuNTVoLTEuNDg5di05LjU1aC0zLjJ2LTEuMjU3aDcuODg5ek0xMjMuNjcxIDM5LjcyOHEwIDEuNDU1LS4zNDcgMi41MTMtLjM0IDEuMDU5LS45MjYgMS43NTMtLjU3OS42ODYtMS4zNjQgMS4wMjUtLjc3OC4zMzEtMS42NDYuMzMxLTEuMDQyIDAtMS44MTktLjM3Mi0uNzY5LS4zOC0xLjI4MS0xLjA5MS0uNTA1LS43MTEtLjc1My0xLjcyOC0uMjQ4LTEuMDI2LS4yNDgtMi4zMDcgMC0xLjQzOS4zNC0yLjQ5Ny4zMzgtMS4wNTkuOTE3LTEuNzQ1LjU4Ny0uNjk0IDEuMzY0LTEuMDI1Ljc3Ny0uMzM5IDEuNjQ2LS4zMzkgMS4wNDEgMCAxLjgxLjM4Ljc3OC4zOCAxLjI5IDEuMDkyLjUxMy43MDMuNzYgMS43Mi4yNTcgMS4wMTcuMjU3IDIuMjl6bS0xLjUzLjEwN3EwLS45NS0uMTQ4LTEuNzM2LS4xNC0uNzk0LS40NjMtMS4zNjQtLjMyMy0uNTctLjgzNS0uODg1LS41MDUtLjMxNC0xLjIyNC0uMzE0LS42OTUgMC0xLjE5OS4zMzktLjQ5Ni4zMy0uODE5LjkxLS4zMjIuNTctLjQ4IDEuMzQ3LS4xNTYuNzY5LS4xNTYgMS42MzcgMCAuOTYuMTQ5IDEuNzUzLjE0OC43ODUuNDYzIDEuMzU2LjMyMi41NjIuODI2Ljg3Ni41MDUuMzE1IDEuMjE2LjMxNS42OTQgMCAxLjE5OS0uMzMxLjUwNC0uMzQuODI3LS45MS4zMy0uNTc4LjQ4Ny0xLjM0Ny4xNTgtLjc3LjE1OC0xLjY0NnoiCiAgICAgICBpZD0icGF0aDgiIC8+CiAgPC9nPgogIDxnCiAgICAgYXJpYS1sYWJlbD0iU0lNUExFIgogICAgIHN0eWxlPSJmb250LXNpemU6MTYuOTMzM3B4O2xpbmUtaGVpZ2h0OjEuNTY7Zm9udC1mYW1pbHk6Y29uc29sYXM7LWlua3NjYXBlLWZvbnQtc3BlY2lmaWNhdGlvbjonY29uc29sYXMsIE5vcm1hbCc7bGV0dGVyLXNwYWNpbmc6MTcuMjc3M3B4O2ZpbGw6I2ZmZjtzdHJva2Utd2lkdGg6LjI2NDU4MyIKICAgICBpZD0ibGluZTEiPgogICAgPHBhdGgKICAgICAgIGQ9Ik0xNi40NDUgMTUuMzNxMCAuNzY4LS4zMTQgMS4zNDd0LS44NzYuOTY3cS0uNTYyLjM4LTEuMzU2LjU3LS43ODYuMTkxLTEuNzM2LjE5MS0uNDMgMC0uODYtLjAzMy0uNDIyLS4wMzMtLjgxOS0uMDgzLS4zODktLjA1LS43MzYtLjExNS0uMzQ3LS4wNjctLjYyOC0uMTQxdi0xLjQyMnEuNjIuMjMxIDEuMzg5LjM2NC43NzcuMTMyIDEuNzYxLjEzMi43MTEgMCAxLjIwNy0uMTA4LjUwNS0uMTE1LjgxOS0uMzMuMzIyLS4yMjMuNDYzLS41MzguMTQ5LS4zMTQuMTQ5LS43MTkgMC0uNDM4LS4yNDgtLjc0NC0uMjQtLjMxNC0uNjM3LS41NTQtLjM5Ny0uMjQ4LS45MS0uNDQ3bC0xLjAzMy0uNDIxcS0uNTMtLjIxNS0xLjA0Mi0uNDYzLS41MDQtLjI1Ny0uOTAxLS41OTYtLjM5Ny0uMzQ3LS42NDUtLjgxLS4yNC0uNDYzLS4yNC0xLjEgMC0uNTU0LjIzMi0xLjA5MS4yMzEtLjUzNy43MTktLjk1LjQ4OC0uNDIzIDEuMjQ4LS42NzkuNzctLjI1NiAxLjgyOC0uMjU2LjI3MyAwIC41ODcuMDI1LjMyMi4wMjQuNjQ1LjA3NC4zMy4wNDEuNjQ1LjEuMzIyLjA1Ny41OTUuMTIzdjEuMzIzcS0uNjM3LS4xODItMS4yNzMtLjI3My0uNjM3LS4wOTktMS4yMzItLjA5OS0xLjI2NSAwLTEuODYuNDIyLS41OTYuNDIyLS41OTYgMS4xMzMgMCAuNDM4LjI0Ljc1Mi4yNDguMzE0LjY0NS41NjIuMzk3LjI0OC45MDEuNDU1LjUxMy4xOTggMS4wNDIuNDEzLjUyOS4yMTUgMS4wMzMuNDcyLjUxMy4yNTYuOTEuNjEyLjM5Ny4zNDcuNjM2LjgxOC4yNDguNDcxLjI0OCAxLjExNnpNMzguNyA4LjY5aC0yLjQ4OFY3LjQ1aDYuNDY1djEuMjRINDAuMTlWMTdoMi40ODh2MS4yNTZoLTYuNDY1VjE3SDM4Ljd6TTcwLjI4MiAxOC4yNTZoLTEuNDRsLS4yMTQtNi43MzgtLjA5MS0yLjU4OC0uNTA0IDEuNTA1LTEuNTk2IDQuMjk5SDY1LjQyTDYzLjg5OCAxMC42bC0uNTA0LTEuNjctLjAzMyAyLjcwMy0uMTkgNi42MjNoLTEuMzlsLjUzLTEwLjgwNmgxLjc0NWwxLjQ1NSA0LjA2OC40NzEgMS4zNzIuNDU1LTEuMzcyIDEuNTMtNC4wNjhoMS43OTR6TTk2LjM2NSAxMC43NTdxMCAuNjYxLS4yNDkgMS4zMTUtLjI0OC42NDUtLjc2OCAxLjE1Ny0uNTIxLjUxMy0xLjMzMi44MzUtLjgxLjMxNC0xLjkzNC4zMTRoLTEuMzR2My44NzhIODkuMjdWNy40NWgzLjA0M3EuODAyIDAgMS41MzguMTgyLjczNi4xNzMgMS4yOS41Ny41NjIuMzk3Ljg5MyAxLjAyNS4zMy42MjkuMzMgMS41M3ptLTEuNTMuMDY2cTAtMS4wNDItLjY4Ni0xLjU5Ni0uNjc4LS41NTQtMS45MDItLjU1NGgtMS41MDV2NC40NDloMS4zNzNxMS4zMDYgMCAyLjAwOS0uNTcuNzEtLjU3MS43MS0xLjcyOXpNMTIyLjY5NSAxOC4yNTZoLTYuMjE3VjcuNDVoMS40OTZWMTdoNC43MjF6TTE0OC45NDQgMTguMjU2SDE0Mi44VjcuNDVoNi4xNDN2MS4yNGgtNC42NzJ2My4zNDloNC40OXYxLjI0aC00LjQ5djMuNzJoNC42NzJ6IgogICAgICAgaWQ9InBhdGgxMiIgLz4KICA8L2c+Cjwvc3ZnPgo="
-        alt="photo" />
-      <img id="reference"
-        src="data:image/webp;base64,UklGRkIOAABXRUJQVlA4WAoAAAAIAAAA5wMA5wMAVlA4IEQNAADwCwGdASroA+gDPh0IhEIBCQBgOJ6W78fJnl6+iPsBPHpcLb4v/uuk7QeHP45+B37D+oD8T/h34SfsN7B/gHxL8N/Bf9Yv8J3f5/oEFmnTp06dOnTp06dOnTp06dOnTp06dOnTp06dOlQAKxzpdYAM0CjpeoAEhoVel1gy+RqMdKgBuL+AAr8IhkeRYsWLFixYsWLFiviuTpZ1mC99gKmp7F8Vs+cRnRKhk2Iqdm0uLsy8Qor39nwuuJmSp3LbJDe06G4uIv2JxbWjyxAqvLdF1UEXZTOAWv79+/fv379+/fv3qfICi24qDOtjMraZmTtuL+D8ZghFo8TdnddMqhMttasFlAkBLk5xG1qrWrCABxyXZ8Ci6fQT0oo79DTp06dOnTp06dOnIUoqgXk7bt7ollWI/JvcxPJVxPAnd8Oq+AQvsMTrj8Si9gfhCm0Gb6ILX1Axjq+isyfFycKQPqQxiIg7SF3taelr+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv3qYruSZS+CNz1ZUAOEIVTPwiOkPNQswrrAAAEtgP4XpkB8t6gP8CUiRmuThSAAAisfZByLFixYsWLFixYsWLFixOO/9oCPrsalrAnHicV+JytTzFL/1DYESBRePvYjpax2AA45FcozAdQpvbV6bzN/o62jyLFixYsWLFixORFW8F09zfUvNyt2/GWCPNemU+zAAB4HhyLkLyRXwGWTPSrJSlafvhPsAURhgFnixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYr4AFkPUv8hcXidwCgHJTSWll1Ow8hLYAk+lv78VM9HYHiyZmT99wjraPIsWLFixYsWLFixYsWLFfFoylA3UkPYviBLQVbCCzKGXQpMBM8HIB7MX1BI0wJxN/o62jyLFixYsWLFixYsWLE4AE5HEAOORse4RzR5UCVkNoc4WZ1nhk7JJPsrxQCSEpZRN/o62jyLFixYsWLFixYsWJ0KgfPQVuNRRP4U9zfVqMCom/0dbR5FixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFicAAP7/+WWf/xxwxwwRAABjsUqBwSOqae8mja8bY1CaqWtMO8CP4V07DVrDspGqw/9+bGSlVjXjbGpcUQZ0MyUZd14goal8ZhyBnJviGfd2y4FKjKUdRHVC7V/PKmmvJrKy3rRzgBqKsxhjyMSqJiFvgGU8L2/0YPOuiKNBV+P9PWq+6XPmbGXF/wAvfAyPEGe0WN/x6iaIbL3l3ZeWsWM/PpXkbMZIzfeyH5hoV1XSwMYgUcjd8k59OHlxWTv2146AvNuoDfoG2UUKtiLjKUk28r85BNmKsRLoTUXbrZO5yYns7RdXkhlNay+XdQImAN7r1B51IAzL0hrML8JA1YrmLQrn/lqEHtv6Sk7q5yc8Eh32bCDWKxzaMMyMCxxBUvvwk59UmgdBSUkkG6QEsH9AoCN4RU/R8QvU4I/xQCnVHEwEMAg7gen5n+oFKp0ZpYRfHdMm8DZ18h/KW7yuM02maeGOqKBCdM+jxrXpI4/4NwxedVqUt9/4golFcdQiX89ey9pnekuVrrsaBrcXh6ZtzzFfBN4EAAAACzzedN3BmAuHfwQ8WS4LzXdLtFM3Eu9/dbvRln7ulCux66OihfPiEmwiy3yetL0Q5Ibe6crZ4NerjuBNmYWFh6ygj7aki9Yh4mpxpMhE2h3uphqgNkuBhtiFv71uoCBetjMltpLZXdI0mavxs4USldB/A9EF8RDk+9ZeO4++GQ/1cPjN0yaX0YqvLP0Uk8q/1Tst6Dn2Yj1T1tJlfWIzCjoTDzNfCsKhkJcRAR9Cy+Zxv/5ZDJ/Nvoi5qvjvyJ2nMqSHtE02G6TE4W1wx8ZSfz7CEt3a+vWsSIb96gz0NOUNZyrmOiE6WHHIzsDHCoiVqfgnEtupiQ/SQTCrp4u+uArT4RBySLbJ2olKC1o8CZVHdC7HluJBaoXJJ6mfaj3OGtX5susscCT3FaKH+9CsqAXYyyLdmEr3NAAY3jJAcY7gQoxqj82vEhczN5oomuYTzk0j2a9EBw4ltoqDrq+Ljg3IQdmXHXaBM80C6vRdsSCkXhUXS8IzCjGY7D3nskTfJKyhK2Gq654qiwOMyjO2eAAAc8CioEAAAAAav/FH7OCwHCMtm6mNGEhY6hFJHVh9MM8MuHxs+Q2067l2waSOJDb3mBkCa5/qGKAM6wa5MXWXFTNx9y8aPjfjm2LKyo7xfF0KY07L+hMucRRizTLf4k/UCgLkVX7zpXbPERkhP8YOgurD+0X9RwIyM9yPiyT+Q4LoMuB9fymBfwD1i729y0CtgWNzWUFvAL18vuzktSVRcmLnjr6qZk3NOFR9g9nDzGhj+j+L8JUjpL/4iXQ/LbxXbS3LwpsF2uLESDY+JKnB3K+cBgFfVOs1/Rny1OfANLE1vLff+tfJzo4WxAoovSooZzCBD0jVjIgwPsoSvb6W6GSOLN+klPGf1SDmRkjsjq7xrjV6DDJir7NUZy+xYkOU4A/sO8K5jBpzoACL1B80XOnBQp1pEVle3DYl0QIVEa1VYyBiATOuBPfSK+wm4F6VLkTqNogEwQKXZ3oeGMXuAEMT8oIEAL2d0LuBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFWElG2AAAAElJKgAIAAAABgASAQMAAQAAAAEAAAAaAQUAAQAAAFYAAAAbAQUAAQAAAF4AAAAoAQMAAQAAAAIAAAAxAQIAEQAAAGYAAABphwQAAQAAAHgAAAAAAAAAYAAAAAEAAABgAAAAAQAAAHBhaW50Lm5ldCA0LjMuMTAAAAUAAJAHAAQAAAAwMjMwAaADAAEAAAABAAAAAqAEAAEAAADoAwAAA6AEAAEAAADoAwAABaAEAAEAAAC6AAAAAAAAAAIAAQACAAQAAABSOTgAAgAHAAQAAAAwMTAwAAAAAA=="
-        alt="reference" />
-    </div>
-  </div>
-  <div id="help" class="modal">
+        // Using the HSP value, determine whether the color is light or dark
+        if (hsp > 127.5) {
+          return "light";
+        } else {
+          return "dark";
+        }
+      }
+    </script>
     <style>
-      /* The Modal (background) */
-      .modal {
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      img#photo {
+        top: 0;
+        left: 0;
+        max-width: 100%;
+        max-height: 100vh;
+        display: block;
+        /* remove extra space below image */
+      }
+
+      img#reference {
+        top: 0;
+        left: 0;
+        max-width: 100%;
+        max-height: 100vh;
+        position: relative;
         display: none;
-        /* Hidden by default */
-        position: fixed;
-        /* Stay in place */
+        /* remove extra space below image */
+      }
+
+      #container {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        position: relative;
+        display: grid;
+        width: fit-content;
+        height: fit-content;
+        border: 1px solid black;
+      }
+
+      #reference {
+        position: absolute;
+        display: none;
         z-index: 10;
-        /* Sit on top */
-        padding-top: 30px;
-        /* Location of the box */
+      }
+
+      #guides {
+        cursor: default;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+      }
+
+      #image {
+        width: fit-content;
+        height: fit-content;
+      }
+
+      #zoom {
+        position: absolute;
+        cursor: zoom-in;
+      }
+
+      #reference {
+        display: none;
+      }
+
+      .grid {
+        display: inline-block;
+        position: relative;
+        vertical-align: top;
+      }
+
+      .grid::before,
+      .grid::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to right, #ccc 1px, transparent 1px);
+        background-size: 10%;
+      }
+
+      .grid::before {
+        box-shadow: inset 0px 0px 0 1px #ccc;
+      }
+
+      .grid::after {
+        transform: rotate(90deg);
+      }
+
+      .grid.dark::before,
+      .grid.dark::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          to right,
+          rgb(65, 65, 65) 1px,
+          transparent 1px
+        );
+        background-size: 10%;
+      }
+
+      .grid.dark::before {
+        box-shadow: inset 0px 0px 0 1px rgb(65, 65, 65);
+      }
+
+      .slider-container .slider-wrap .slider-btn {
+        width: 1px;
+      }
+
+      .slider-container .slider-wrap .slider-btn:hover {
+        background: rgba(0, 0, 0, 0.5);
+        width: 8px;
+      }
+
+      .slider-container .slider-wrap .slider-btn::after {
+        background-color: rgb(0 0 0 / 0%);
+        content: "";
+        box-shadow: none;
+      }
+
+      #crosshair-h {
+        z-index: 100;
+        width: 100%;
+      }
+
+      #crosshair-v {
+        z-index: 100;
+        height: 100%;
+      }
+
+      .hair {
+        position: fixed;
+        top: 0;
+        left: 0;
+        margin-top: -3px;
+        margin-left: -2px;
+        background: transparent;
+        border-top: 1px dotted #000;
+        border-left: 1px dotted #000;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      .hair.light {
+        border-top: 1px dotted #fff;
+        border-left: 1px dotted #fff;
+      }
+
+      .hide {
+        display: none;
+      }
+
+      #file-info {
+        display: none;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        padding: 10px;
+        margin: 10px;
+        font: 14px arial;
+        color: #fff;
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 24px;
+        z-index: 9;
+      }
+
+      #file-info:hover {
+        top: 0;
+        left: 0;
+        width: fit-content;
+        height: fit-content;
+      }
+
+      #file-info.ok {
+        color: white;
+        background: rgba(0, 0, 0, 0.5);
+      }
+
+      /* green rgba(0, 128, 0, 0.5); */
+
+      #file-info.ng {
+        color: red;
+        background: rgba(0, 0, 0, 0.5);
+      }
+
+      #file-info.bad {
+        background: rgb(255 0 0 / 50%);
+      }
+
+      /* red rgba(255, 0, 0, 0.25) */
+
+      #camera_mode {
+        display: inline-block;
+        font-weight: bold;
+        text-align: center;
+        border-radius: 10%;
+        width: 25px;
+        height: 12px;
+        color: #999999;
+        font-size: smaller;
+        background-color: #eee;
+      }
+
+      /* Group same frames together */
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 0;
+        }
+
+        /* more concise! */
+        50% {
+          opacity: 1;
+        }
+      }
+
+      .dot {
+        animation: blink 1s infinite;
+        float: left;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: greenyellow;
+        margin-right: 6px;
+      }
+
+      .dot.warning {
+        background: red;
+      }
+
+      #triage {
+        z-index: 10;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        margin: 10px;
+        background: rgba(0, 0, 0, 0);
+      }
+
+      #triage {
+        position: absolute;
+        z-index: 1;
+      }
+
+      #triage .material-icons {
+        position: relative;
+        display: inline-block;
+        font-size: 50px;
+        cursor: pointer;
+        margin-right: 10px;
+        margin-top: 10px;
+        transition: all 0.2s ease-in-out;
+      }
+
+      #triage .material-icons:hover {
+        transform: scale(1.2);
+      }
+
+      div#discard::after {
+        content: " ";
+        top: 16px;
+        left: 8px;
+        position: absolute;
+        width: 34px;
+        height: 22px;
+        background: #f6b3ad;
+        z-index: -1;
+      }
+
+      div#review::after {
+        content: " ";
+        top: 16px;
+        left: 8px;
+        position: absolute;
+        width: 34px;
+        height: 22px;
+        background: #c9f0f8;
+        z-index: -1;
+      }
+
+      div#star::after {
+        content: " ";
+        top: 16px;
+        left: 8px;
+        position: absolute;
+        width: 34px;
+        height: 22px;
+        background: #feebb3;
+        z-index: -1;
+      }
+
+      #triage #discard,
+      .discard {
+        color: #ee685c;
+      }
+
+      #triage #keep,
+      .keep {
+        color: #34a853;
+      }
+
+      #triage #review,
+      .review {
+        color: #4ecde6;
+      }
+
+      #triage #star,
+      .star {
+        color: #fbbc04;
+      }
+
+      /* #669df6 */
+
+      #triage.done {
+        /* opacity: 0.5; */
+        filter: grayscale(50%);
+        pointer-events: none;
+      }
+
+      #context-menu {
+        transform: scale(0);
+        transform-origin: top left;
+      }
+
+      #context-menu {
+        z-index: 10000;
+        width: 220px;
+        background: #999999;
+        border-radius: 5px;
+        --mouse-x: 0;
+        --mouse-y: 0;
+        display: none;
+        position: fixed;
+        margin: 0;
         left: 0;
         top: 0;
-        width: 100%;
-        /* Full width */
-        height: 100%;
-        /* Full height */
-        overflow: auto;
-        /* Enable scroll if needed */
-        background-color: rgb(0, 0, 0);
-        /* Fallback color */
-        background-color: rgba(0, 0, 0, 0.4);
-        /* Black w/ opacity */
+        /* The following line is responsible for all the magic */
+        transform: translateX(min(var(--mouse-x), calc(100vw - 100%)))
+          translateY(min(var(--mouse-y), calc(100vh - 100%)));
       }
 
-      /* Modal Content */
-      .modal-content {
-        background-color: #fefefe;
-        margin: auto;
-        padding: 40px;
-        padding-top: 20px;
-        border: 1px solid #888;
-        width: 80%;
+      #context-menu.active {
+        transform: scale(1);
+        transition: transform 200ms ease-in-out;
+      }
+
+      #context-menu .item {
+        padding: 8px 10px;
         font-size: 18px;
         font-family: Calibri, sans-serif;
-      }
-
-      /* The Close Button */
-      .close {
-        color: #aaaaaa;
-        float: right;
-        font-size: 30px;
-        font-weight: bold;
-      }
-
-      .close:hover,
-      .close:focus {
-        color: #000;
-        text-decoration: none;
+        color: #eee;
         cursor: pointer;
       }
 
-      .modal-content ul {
-        list-style-type: none;
-        padding: 0;
-        margin: 0;
+      #context-menu .item:hover {
+        background: #454545;
       }
 
-      .modal-content ul li {
-        padding-bottom: 20px;
+      #context-menu .item:hover:nth-of-type(1) {
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+        background: #454545;
       }
 
-      .modal-content ul.l2 li {
-        margin-left: 34px;
-        padding-bottom: 0px;
+      #context-menu .item:hover div div {
+        color: #454545;
       }
 
-      .modal-content .material-icons {
+      #context-menu .item.warning:hover {
+        background: #454545;
+        color: rgb(255, 0, 0);
+      }
+
+      #context-menu .item i {
+        display: inline-block;
+        margin-right: 5px;
+      }
+
+      #context-menu hr {
+        margin: 2px 4px;
+        border: 1px solid #999999;
+        border-color: #999999;
+      }
+
+      .hide-menu-item {
+        display: none;
+      }
+
+      .show-menu-item {
+        display: block;
+      }
+
+      .material-icons {
         display: inline-flex;
         vertical-align: top;
-        margin-right: 10px;
+        margin-right: 4px;
+        font-size: 24px;
+      }
+
+      #context-menu .item#exif div {
+        font-size: 16px;
+        padding-bottom: 8px;
+      }
+
+      .item#exif .material-icons {
         font-size: 20px;
       }
 
-      kbd {
-        background-color: #eee;
-        border-radius: 3px;
-        border: 1px solid #b4b4b4;
-        box-shadow: 0 1px 1px rgba(0, 0, 0, .2), 0 2px 0 0 rgba(255, 255, 255, .7) inset;
-        color: #333;
+      .debug {
+        display: none;
+      }
+
+      .truncate {
         display: inline-block;
-        font-size: .85em;
-        font-weight: 700;
-        line-height: 1;
-        padding: 2px 4px;
+        max-width: 160px;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .close-button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin-top: 10px;
+        margin-right: 10px;
+        cursor: pointer;
+        z-index: 99;
+      }
+
+      .close-button .material-icons {
+        font-size: 30px;
+        color: #aaa;
+        display: inline-block;
+        border: 0px solid white;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.8);
+        width: 34px;
+        height: 34px;
+        text-align: center;
+        line-height: 34px;
+      }
+
+      .zoomist-slider {
+        position: absolute;
+        z-index: 2;
+        top: 25%;
+        left: 0;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 0 5px 5px 0;
+        cursor: pointer;
+      }
+
+      .zoomist-slider-bar {
+        background-color: #aaa;
+      }
+
+      .zoomist-slider-button {
+        cursor: pointer;
+      }
+
+      /* ----------- */
+      .gridlines {
+        display: none;
+        position: absolute;
+        background-color: #ccc;
       }
     </style>
-    <script>
-      // Get the modal
-      var modal = document.getElementById("help");
+  </head>
 
-      function showHelp() {
-        modal.style.display = "block";
-      }
-
-      function closeHelp() {
-        modal.style.display = "none";
-      }
-    </script>
-    <!-- Modal content -->
-    <div class="modal-content">
-      <span onclick="closeHelp()" class="close" id="close">&times;</span>
-      <h3>How to use</h3>
-      <p>When used in combination with the Node server app, new photos will be opened automatically. Alternatively you
-        can drag-and-drop image files. To open a reference image for comparison <kbd>Ctrl</kbd> drag-and-drop the file.
-      </p>
-      <p>Additional functionality can be accessed via the right-click context menu.</p>
-      <ul>
-        <li>
-          <span class="material-icons">file_copy</span> Copy the active photo to the target folder.
-        </li>
-        <li>
-          <span class="material-icons">delete</span> Delete the copy of the photo from the target folder.
-        </li>
-        <li>
-          <span class="material-icons">sd_card</span> Delete the <em>original photo</em> from the camera.
-          <ul class="l2">
-            <li>To delete <kbd>Ctrl</kbd> + left-click. <em>Warning!</em> Use at your own risk.</li>
-          </ul>
-        </li>
-        <li>
-          <span class="material-icons">save</span> Save the currently displayed file to disk.
-        </li>
-        <li>
-          <span class="material-icons">grid_on</span> Turn the grid on or off.
-        </li>
-        <li>
-          <span class="material-icons">add</span> Turn the crosshair on or off.
-        </li>
-        <li>
-          <span class="material-icons">zoom_in</span> Switch to Zoom view. You can also double-click
-          the image to zoom.
-          <ul class="l2">
-            <li>Use the mouse and scroll wheel to zoom and pan.</li>
-          </ul>
-        </li>
-        <li>
-          <span class="material-icons">compare</span> Switch to Compare view. To toggle the reference <kbd>Alt</kbd> +
-          click-hold left mouse button.
-        </li>
-        <li>
-          <span class="material-icons">category</span> Show/hide the Quick Sort buttons.
-        </li>
-        <li>
-          <span class="material-icons">text_snippet</span> Show/hide the Info area.
-        </li>
-        <li>
-          <span class="material-icons">image</span> Click to copy the filename to the clipboard.
-        </li>
-        <li>
-          <span class="material-icons">photo_camera</span>/&nbsp;&nbsp;<span
-            class="material-icons">desktop_windows</span> Click to copy the source or target folder to the clipboard.
-        </li>
-      </ul>
-      <p>To place a guide <kbd>Ctrl</kbd> + left-click the image. To clear all guides <kbd>Ctrl</kbd> + <kbd>Shift</kbd>
-        +
-        left-click the image.</p>
+  <body>
+    <div id="context-menu">
+      <div class="item copy-file" onclick="copyFile();">
+        <span class="material-icons">file_copy</span> Copy Photo
+      </div>
+      <hr class="copy-file" />
+      <div class="item delete-copy" onclick="deleteFromTarget();">
+        <span class="material-icons">delete</span> Delete Copy
+      </div>
+      <div
+        class="item warning hide-menu-item"
+        id="delete_original"
+        title="Ctrl-click to delete"
+      >
+        <span class="material-icons">sd_card</span> Delete Original
+      </div>
+      <div
+        class="item save-file"
+        id="save_file"
+        title="Save the current file"
+        onclick="saveFile();"
+      >
+        <span class="material-icons">save</span> Save current file
+      </div>
+      <hr />
+      <div class="item" onclick="toggleGrid();">
+        <span id="grid_toggle" class="material-icons">grid_off</span> Grid
+        on/off
+      </div>
+      <div class="item" onclick="toggleCrosshair();">
+        <span id="grid_crosshair" class="material-icons">add</span> Crosshair
+        on/off
+      </div>
+      <div class="item" onclick="toggleZoom();">
+        <span id="zoom_toggle" class="material-icons">zoom_in</span> Zoom View
+        on/off
+      </div>
+      <div class="item" onclick="toggleCompare();">
+        <span id="zoom_compare" class="material-icons">compare</span> Compare
+        View on/off
+      </div>
+      <div class="item quick-sort" onclick="toggleQuickSort();">
+        <span id="quick_sort" class="material-icons">category</span> Show/hide
+        Quick Sort
+      </div>
+      <div class="item quick-sort" onclick="toggleFileinfo();">
+        <span id="file_info" class="material-icons">text_snippet</span>
+        Show/hide Info
+      </div>
+      <hr />
+      <div
+        class="item clip hide-menu-item filename"
+        id="filename-menu-item"
+        data-clipboard-target="#filename"
+        title="Click to copy filename"
+      >
+        <span class="material-icons">image</span>
+        <div class="truncate" id="filename">Filename</div>
+      </div>
+      <div
+        class="item clip"
+        id="source-menu-item"
+        data-clipboard-target="#source"
+        title="Click to copy source folder"
+      >
+        <span class="material-icons">photo_camera</span>
+        <div class="truncate" id="source">Source Folder</div>
+      </div>
+      <div
+        class="item clip"
+        id="target-menu-item"
+        data-clipboard-target="#target"
+        title="Click to copy target folder"
+      >
+        <span class="material-icons">desktop_windows</span>
+        <div class="truncate" id="target">Target Folder</div>
+      </div>
+      <hr />
+      <div
+        class="item clip hide-menu-item"
+        id="exif"
+        data-clipboard-text=""
+        title="Click to copy settings"
+      >
+        <div>
+          <div id="camera_mode"></div>
+          &nbsp;<span class="material-icons">camera</span><span id="F"></span>
+          <span class="material-icons">shutter_speed</span>SS
+          <span id="SS"></span>
+        </div>
+        <div>
+          <span class="material-icons">camera_roll</span>ISO
+          <span id="ISO"></span> <span class="material-icons">iso</span
+          ><span id="EV"></span> EV
+          <span id="flash" class="material-icons">flash_on</span
+          ><span id="flash_mode"></span>
+        </div>
+      </div>
+      <div class="item" title="Show help" onclick="showHelp();">
+        <span class="material-icons">help_outline</span> <span>Help</span>
+      </div>
+      <hr />
     </div>
+    <div id="crosshair-h" class="hair"></div>
+    <div id="crosshair-v" class="hair"></div>
+    <div
+      id="container"
+      ondrop="dropHandler(event);"
+      ondragover="dragOverHandler(event);"
+    >
+      <canvas id="guides"></canvas>
+      <div id="triage" class="hide">
+        <div
+          id="keep"
+          onClick="quickSort('keep')"
+          title="Keep"
+          class="material-icons keep"
+        >
+          folder
+        </div>
+        <div
+          id="star"
+          onClick="quickSort('star')"
+          title="Star"
+          class="material-icons star"
+        >
+          folder_special
+        </div>
+        <div
+          id="review"
+          onClick="quickSort('review')"
+          title="Review"
+          class="material-icons review"
+        >
+          rule_folder
+        </div>
+        <div
+          id="discard"
+          onClick="quickSort('discard')"
+          title="Discard"
+          class="material-icons discard"
+        >
+          folder_delete
+        </div>
+      </div>
+      <span id="file-info"
+        >Drag and drop an image file or connect a device. Press F1 for
+        help</span
+      >
+      <div id="image">
+        <img
+          id="photo"
+          src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+CjxzdmcKICAgd2lkdGg9IjEwMDAiCiAgIGhlaWdodD0iMTAwMCIKICAgdmlld0JveD0iMCAwIDI2NC41ODMgMjY0LjU4MyIKICAgdmVyc2lvbj0iMS4xIgogICBpZD0ic3ZnMTYiCiAgIHNvZGlwb2RpOmRvY25hbWU9InRpdGxlLW1pbi5zdmciCiAgIGlua3NjYXBlOnZlcnNpb249IjEuMSAoYzY4ZTIyYzM4NywgMjAyMS0wNS0yMykiCiAgIHhtbG5zOmlua3NjYXBlPSJodHRwOi8vd3d3Lmlua3NjYXBlLm9yZy9uYW1lc3BhY2VzL2lua3NjYXBlIgogICB4bWxuczpzb2RpcG9kaT0iaHR0cDovL3NvZGlwb2RpLnNvdXJjZWZvcmdlLm5ldC9EVEQvc29kaXBvZGktMC5kdGQiCiAgIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIKICAgeG1sbnM6c3ZnPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPGRlZnMKICAgICBpZD0iZGVmczIwIiAvPgogIDxzb2RpcG9kaTpuYW1lZHZpZXcKICAgICBpZD0ibmFtZWR2aWV3MTgiCiAgICAgcGFnZWNvbG9yPSIjZmZmZmZmIgogICAgIGJvcmRlcmNvbG9yPSIjNjY2NjY2IgogICAgIGJvcmRlcm9wYWNpdHk9IjEuMCIKICAgICBpbmtzY2FwZTpwYWdlc2hhZG93PSIyIgogICAgIGlua3NjYXBlOnBhZ2VvcGFjaXR5PSIwLjAiCiAgICAgaW5rc2NhcGU6cGFnZWNoZWNrZXJib2FyZD0iMCIKICAgICBzaG93Z3JpZD0iZmFsc2UiCiAgICAgaW5rc2NhcGU6em9vbT0iMC44MzIiCiAgICAgaW5rc2NhcGU6Y3g9IjQ5OS4zOTkwNCIKICAgICBpbmtzY2FwZTpjeT0iNTAwLjYwMDk2IgogICAgIGlua3NjYXBlOndpbmRvdy13aWR0aD0iMTkyMCIKICAgICBpbmtzY2FwZTp3aW5kb3ctaGVpZ2h0PSIxMDE3IgogICAgIGlua3NjYXBlOndpbmRvdy14PSIxOTEyIgogICAgIGlua3NjYXBlOndpbmRvdy15PSItOCIKICAgICBpbmtzY2FwZTp3aW5kb3ctbWF4aW1pemVkPSIxIgogICAgIGlua3NjYXBlOmN1cnJlbnQtbGF5ZXI9InN2ZzE2IiAvPgogIDxwYXRoCiAgICAgc3R5bGU9Im9wYWNpdHk6Ljk5NTtmaWxsOiMwMDA7ZmlsbC1ydWxlOmV2ZW5vZGQ7c3Ryb2tlLXdpZHRoOi4yNjQ1ODQ7c3Ryb2tlLWxpbmVjYXA6c3F1YXJlO3N0cm9rZS1vcGFjaXR5Oi41IgogICAgIGQ9Ik0wIDBoMjY0LjU4M3YyNjQuNTgzSDB6IgogICAgIGlkPSJiYWNrZ3JvdW5kIiAvPgogIDxnCiAgICAgYXJpYS1sYWJlbD0iU1lOQyIKICAgICBzdHlsZT0iZm9udC1zaXplOjE2LjkzMzNweDtsaW5lLWhlaWdodDoxLjU2O2ZvbnQtZmFtaWx5OmNvbnNvbGFzOy1pbmtzY2FwZS1mb250LXNwZWNpZmljYXRpb246J2NvbnNvbGFzLCBOb3JtYWwnO2xldHRlci1zcGFjaW5nOjE3LjI3NzNweDtmaWxsOiNmZmY7c3Ryb2tlLXdpZHRoOi4yNjQ1ODMiCiAgICAgaWQ9ImxpbmUzIj4KICAgIDxwYXRoCiAgICAgICBkPSJNMTYuNzEgNjguNjlxMCAuNzctLjMxNCAxLjM0OC0uMzE0LjU3OS0uODc3Ljk2Ny0uNTYyLjM4LTEuMzU2LjU3MS0uNzg1LjE5LTEuNzM2LjE5LS40MyAwLS44Ni0uMDMzLS40MjEtLjAzMy0uODE4LS4wODMtLjM4OS0uMDUtLjczNi0uMTE1LS4zNDctLjA2Ny0uNjI5LS4xNHYtMS40MjNxLjYyLjIzMSAxLjM5LjM2NC43NzcuMTMyIDEuNzYuMTMyLjcxMiAwIDEuMjA4LS4xMDcuNTA0LS4xMTYuODE4LS4zMzEuMzIzLS4yMjMuNDYzLS41MzguMTUtLjMxNC4xNS0uNzE5IDAtLjQzOC0uMjQ5LS43NDQtLjI0LS4zMTQtLjYzNy0uNTU0LS4zOTYtLjI0OC0uOTA5LS40NDdsLTEuMDM0LS40MjFxLS41MjktLjIxNS0xLjA0MS0uNDYzLS41MDUtLjI1Ny0uOTAyLS41OTYtLjM5Ni0uMzQ3LS42NDQtLjgxLS4yNC0uNDYzLS4yNC0xLjEgMC0uNTUzLjIzMS0xLjA5LjIzMi0uNTM4LjcyLS45NTIuNDg3LS40MjEgMS4yNDgtLjY3OC43NjktLjI1NiAxLjgyNy0uMjU2LjI3MyAwIC41ODcuMDI1LjMyMy4wMjUuNjQ1LjA3NC4zMzEuMDQxLjY0NS4xLjMyMy4wNTcuNTk2LjEyM3YxLjMyM3EtLjYzNy0uMTgyLTEuMjc0LS4yNzMtLjYzNi0uMDk5LTEuMjMyLS4wOTktMS4yNjUgMC0xLjg2LjQyMi0uNTk1LjQyMi0uNTk1IDEuMTMzIDAgLjQzOC4yNC43NTIuMjQ3LjMxNC42NDQuNTYyLjM5Ny4yNDguOTAyLjQ1NS41MTIuMTk4IDEuMDQxLjQxMy41My4yMTUgMS4wMzQuNDcyLjUxMi4yNTYuOTEuNjEyLjM5Ni4zNDcuNjM2LjgxOC4yNDguNDcxLjI0OCAxLjExNnpNNDQuMzY0IDYwLjgxbC0zLjkxIDYuOTQ2djMuODYxaC0xLjQ5di0zLjg5NGwtMy45MS02LjkxMmgxLjc3OGwyLjE1IDMuOTUyLjc5MyAxLjU4Ny43MjgtMS40MzggMi4xNzQtNC4xMDF6TTY5Ljk3NiA3MS42MTdoLTEuOTE5bC0zLjE1LTYuNzM4LS45MS0yLjE2N1Y3MS42MTdoLTEuMzcyVjYwLjgxMWgxLjg5NGwzLjAwMSA2LjM4MyAxLjA4MyAyLjQ3MnYtOC44NTVoMS4zNzN6TTk2LjQ1NSA3MS4yMTJxLTEuMjk4LjUzOC0yLjcyLjUzOC0yLjI5IDAtMy41MjItMS4zNjUtMS4yMjQtMS4zNzItMS4yMjQtNC4wNTEgMC0xLjI5OC4zNC0yLjM0OC4zMzgtMS4wNS45NjctMS43NzguNjI4LS43MzYgMS41MjEtMS4xMzMuODkzLS4zOTcgMi0uMzk3Ljc1MyAwIDEuMzk4LjEzMy42NDUuMTI0IDEuMjQuMzg4djEuNDQ3cS0uNTg3LS4zMjItMS4yMTUtLjQ4OC0uNjI4LS4xNzMtMS4zNzItLjE3My0uNzYxIDAtMS4zODEuMjktLjYxMi4yOC0xLjA0Mi44MjYtLjQzLjUzNy0uNjYyIDEuMzIzLS4yMzEuNzc3LS4yMzEgMS43NzggMCAyLjEuODUyIDMuMTY2Ljg1MSAxLjA2NyAyLjQ5NyAxLjA2Ny42OTQgMCAxLjMzLS4xNTcuNjM3LS4xNjYgMS4yMjQtLjQ1NXoiCiAgICAgICBpZD0icGF0aDQiIC8+CiAgPC9nPgogIDxnCiAgICAgYXJpYS1sYWJlbD0iUEhPVE8iCiAgICAgc3R5bGU9ImZvbnQtc2l6ZToxNi45MzMzcHg7bGluZS1oZWlnaHQ6MS41Njtmb250LWZhbWlseTpjb25zb2xhczstaW5rc2NhcGUtZm9udC1zcGVjaWZpY2F0aW9uOidjb25zb2xhcywgTm9ybWFsJztsZXR0ZXItc3BhY2luZzoxNy4yNzczcHg7ZmlsbDojZmZmO3N0cm9rZS13aWR0aDouMjY0NTgzIgogICAgIGlkPSJsaW5lMiI+CiAgICA8cGF0aAogICAgICAgZD0iTTE2Ljg2NyAzNy43MDJxMCAuNjYyLS4yNDggMS4zMTUtLjI0OC42NDUtLjc2OSAxLjE1Ny0uNTIuNTEzLTEuMzMxLjgzNS0uODEuMzE1LTEuOTM1LjMxNWgtMS4zNFY0NS4ySDkuNzc0VjM0LjM5NWgzLjA0M3EuODAyIDAgMS41MzguMTgyLjczNS4xNzMgMS4yOS41Ny41NjIuMzk3Ljg5MiAxLjAyNS4zMzEuNjI5LjMzMSAxLjUzem0tMS41My4wNjZxMC0xLjA0Mi0uNjg2LTEuNTk2LS42NzgtLjU1NC0xLjkwMS0uNTU0aC0xLjUwNXY0LjQ0OWgxLjM3MnExLjMwNyAwIDIuMDEtLjU3LjcxLS41NzEuNzEtMS43Mjl6TTQzLjQ1NCA0NS4yMDFoLTEuNDcxdi00Ljk2aC00LjU0djQuOTZoLTEuNDcxVjM0LjM5NWgxLjQ3MXY0LjU3Mmg0LjU0di00LjU3MmgxLjQ3MXpNNzAuNDk3IDM5LjcyOHEwIDEuNDU1LS4zNDggMi41MTMtLjMzOSAxLjA1OS0uOTI2IDEuNzUzLS41NzkuNjg2LTEuMzY0IDEuMDI1LS43NzcuMzMxLTEuNjQ1LjMzMS0xLjA0MiAwLTEuODItLjM3Mi0uNzY4LS4zOC0xLjI4MS0xLjA5MS0uNTA0LS43MTEtLjc1Mi0xLjcyOC0uMjQ4LTEuMDI2LS4yNDgtMi4zMDcgMC0xLjQzOS4zMzktMi40OTcuMzM5LTEuMDU5LjkxNy0xLjc0NS41ODctLjY5NCAxLjM2NS0xLjAyNS43NzctLjMzOSAxLjY0NS0uMzM5IDEuMDQyIDAgMS44MS4zOC43NzguMzggMS4yOSAxLjA5Mi41MTMuNzAzLjc2MSAxLjcyLjI1NyAxLjAxNy4yNTcgMi4yOXptLTEuNTMuMTA3cTAtLjk1LS4xNDktMS43MzYtLjE0LS43OTQtLjQ2My0xLjM2NC0uMzIyLS41Ny0uODM1LS44ODUtLjUwNC0uMzE0LTEuMjI0LS4zMTQtLjY5NCAwLTEuMTk5LjMzOS0uNDk2LjMzLS44MTguOTEtLjMyMy41Ny0uNDggMS4zNDctLjE1Ny43NjktLjE1NyAxLjYzNyAwIC45Ni4xNDkgMS43NTMuMTQ5Ljc4NS40NjMgMS4zNTYuMzIyLjU2Mi44MjcuODc2LjUwNC4zMTUgMS4yMTUuMzE1LjY5NSAwIDEuMi0uMzMxLjUwNC0uMzQuODI2LS45MS4zMy0uNTc4LjQ4OC0xLjM0Ny4xNTctLjc3LjE1Ny0xLjY0NnpNOTYuODI4IDM1LjY1MmgtMy4ydjkuNTVoLTEuNDg5di05LjU1aC0zLjJ2LTEuMjU3aDcuODg5ek0xMjMuNjcxIDM5LjcyOHEwIDEuNDU1LS4zNDcgMi41MTMtLjM0IDEuMDU5LS45MjYgMS43NTMtLjU3OS42ODYtMS4zNjQgMS4wMjUtLjc3OC4zMzEtMS42NDYuMzMxLTEuMDQyIDAtMS44MTktLjM3Mi0uNzY5LS4zOC0xLjI4MS0xLjA5MS0uNTA1LS43MTEtLjc1My0xLjcyOC0uMjQ4LTEuMDI2LS4yNDgtMi4zMDcgMC0xLjQzOS4zNC0yLjQ5Ny4zMzgtMS4wNTkuOTE3LTEuNzQ1LjU4Ny0uNjk0IDEuMzY0LTEuMDI1Ljc3Ny0uMzM5IDEuNjQ2LS4zMzkgMS4wNDEgMCAxLjgxLjM4Ljc3OC4zOCAxLjI5IDEuMDkyLjUxMy43MDMuNzYgMS43Mi4yNTcgMS4wMTcuMjU3IDIuMjl6bS0xLjUzLjEwN3EwLS45NS0uMTQ4LTEuNzM2LS4xNC0uNzk0LS40NjMtMS4zNjQtLjMyMy0uNTctLjgzNS0uODg1LS41MDUtLjMxNC0xLjIyNC0uMzE0LS42OTUgMC0xLjE5OS4zMzktLjQ5Ni4zMy0uODE5LjkxLS4zMjIuNTctLjQ4IDEuMzQ3LS4xNTYuNzY5LS4xNTYgMS42MzcgMCAuOTYuMTQ5IDEuNzUzLjE0OC43ODUuNDYzIDEuMzU2LjMyMi41NjIuODI2Ljg3Ni41MDUuMzE1IDEuMjE2LjMxNS42OTQgMCAxLjE5OS0uMzMxLjUwNC0uMzQuODI3LS45MS4zMy0uNTc4LjQ4Ny0xLjM0Ny4xNTgtLjc3LjE1OC0xLjY0NnoiCiAgICAgICBpZD0icGF0aDgiIC8+CiAgPC9nPgogIDxnCiAgICAgYXJpYS1sYWJlbD0iU0lNUExFIgogICAgIHN0eWxlPSJmb250LXNpemU6MTYuOTMzM3B4O2xpbmUtaGVpZ2h0OjEuNTY7Zm9udC1mYW1pbHk6Y29uc29sYXM7LWlua3NjYXBlLWZvbnQtc3BlY2lmaWNhdGlvbjonY29uc29sYXMsIE5vcm1hbCc7bGV0dGVyLXNwYWNpbmc6MTcuMjc3M3B4O2ZpbGw6I2ZmZjtzdHJva2Utd2lkdGg6LjI2NDU4MyIKICAgICBpZD0ibGluZTEiPgogICAgPHBhdGgKICAgICAgIGQ9Ik0xNi40NDUgMTUuMzNxMCAuNzY4LS4zMTQgMS4zNDd0LS44NzYuOTY3cS0uNTYyLjM4LTEuMzU2LjU3LS43ODYuMTkxLTEuNzM2LjE5MS0uNDMgMC0uODYtLjAzMy0uNDIyLS4wMzMtLjgxOS0uMDgzLS4zODktLjA1LS43MzYtLjExNS0uMzQ3LS4wNjctLjYyOC0uMTQxdi0xLjQyMnEuNjIuMjMxIDEuMzg5LjM2NC43NzcuMTMyIDEuNzYxLjEzMi43MTEgMCAxLjIwNy0uMTA4LjUwNS0uMTE1LjgxOS0uMzMuMzIyLS4yMjMuNDYzLS41MzguMTQ5LS4zMTQuMTQ5LS43MTkgMC0uNDM4LS4yNDgtLjc0NC0uMjQtLjMxNC0uNjM3LS41NTQtLjM5Ny0uMjQ4LS45MS0uNDQ3bC0xLjAzMy0uNDIxcS0uNTMtLjIxNS0xLjA0Mi0uNDYzLS41MDQtLjI1Ny0uOTAxLS41OTYtLjM5Ny0uMzQ3LS42NDUtLjgxLS4yNC0uNDYzLS4yNC0xLjEgMC0uNTU0LjIzMi0xLjA5MS4yMzEtLjUzNy43MTktLjk1LjQ4OC0uNDIzIDEuMjQ4LS42NzkuNzctLjI1NiAxLjgyOC0uMjU2LjI3MyAwIC41ODcuMDI1LjMyMi4wMjQuNjQ1LjA3NC4zMy4wNDEuNjQ1LjEuMzIyLjA1Ny41OTUuMTIzdjEuMzIzcS0uNjM3LS4xODItMS4yNzMtLjI3My0uNjM3LS4wOTktMS4yMzItLjA5OS0xLjI2NSAwLTEuODYuNDIyLS41OTYuNDIyLS41OTYgMS4xMzMgMCAuNDM4LjI0Ljc1Mi4yNDguMzE0LjY0NS41NjIuMzk3LjI0OC45MDEuNDU1LjUxMy4xOTggMS4wNDIuNDEzLjUyOS4yMTUgMS4wMzMuNDcyLjUxMy4yNTYuOTEuNjEyLjM5Ny4zNDcuNjM2LjgxOC4yNDguNDcxLjI0OCAxLjExNnpNMzguNyA4LjY5aC0yLjQ4OFY3LjQ1aDYuNDY1djEuMjRINDAuMTlWMTdoMi40ODh2MS4yNTZoLTYuNDY1VjE3SDM4Ljd6TTcwLjI4MiAxOC4yNTZoLTEuNDRsLS4yMTQtNi43MzgtLjA5MS0yLjU4OC0uNTA0IDEuNTA1LTEuNTk2IDQuMjk5SDY1LjQyTDYzLjg5OCAxMC42bC0uNTA0LTEuNjctLjAzMyAyLjcwMy0uMTkgNi42MjNoLTEuMzlsLjUzLTEwLjgwNmgxLjc0NWwxLjQ1NSA0LjA2OC40NzEgMS4zNzIuNDU1LTEuMzcyIDEuNTMtNC4wNjhoMS43OTR6TTk2LjM2NSAxMC43NTdxMCAuNjYxLS4yNDkgMS4zMTUtLjI0OC42NDUtLjc2OCAxLjE1Ny0uNTIxLjUxMy0xLjMzMi44MzUtLjgxLjMxNC0xLjkzNC4zMTRoLTEuMzR2My44NzhIODkuMjdWNy40NWgzLjA0M3EuODAyIDAgMS41MzguMTgyLjczNi4xNzMgMS4yOS41Ny41NjIuMzk3Ljg5MyAxLjAyNS4zMy42MjkuMzMgMS41M3ptLTEuNTMuMDY2cTAtMS4wNDItLjY4Ni0xLjU5Ni0uNjc4LS41NTQtMS45MDItLjU1NGgtMS41MDV2NC40NDloMS4zNzNxMS4zMDYgMCAyLjAwOS0uNTcuNzEtLjU3MS43MS0xLjcyOXpNMTIyLjY5NSAxOC4yNTZoLTYuMjE3VjcuNDVoMS40OTZWMTdoNC43MjF6TTE0OC45NDQgMTguMjU2SDE0Mi44VjcuNDVoNi4xNDN2MS4yNGgtNC42NzJ2My4zNDloNC40OXYxLjI0aC00LjQ5djMuNzJoNC42NzJ6IgogICAgICAgaWQ9InBhdGgxMiIgLz4KICA8L2c+Cjwvc3ZnPgo="
+          alt="photo"
+        />
+        <img
+          id="reference"
+          src="data:image/webp;base64,UklGRkIOAABXRUJQVlA4WAoAAAAIAAAA5wMA5wMAVlA4IEQNAADwCwGdASroA+gDPh0IhEIBCQBgOJ6W78fJnl6+iPsBPHpcLb4v/uuk7QeHP45+B37D+oD8T/h34SfsN7B/gHxL8N/Bf9Yv8J3f5/oEFmnTp06dOnTp06dOnTp06dOnTp06dOnTp06dOlQAKxzpdYAM0CjpeoAEhoVel1gy+RqMdKgBuL+AAr8IhkeRYsWLFixYsWLFiviuTpZ1mC99gKmp7F8Vs+cRnRKhk2Iqdm0uLsy8Qor39nwuuJmSp3LbJDe06G4uIv2JxbWjyxAqvLdF1UEXZTOAWv79+/fv379+/fv3qfICi24qDOtjMraZmTtuL+D8ZghFo8TdnddMqhMttasFlAkBLk5xG1qrWrCABxyXZ8Ci6fQT0oo79DTp06dOnTp06dOnIUoqgXk7bt7ollWI/JvcxPJVxPAnd8Oq+AQvsMTrj8Si9gfhCm0Gb6ILX1Axjq+isyfFycKQPqQxiIg7SF3taelr+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv379+/fv3qYruSZS+CNz1ZUAOEIVTPwiOkPNQswrrAAAEtgP4XpkB8t6gP8CUiRmuThSAAAisfZByLFixYsWLFixYsWLFixOO/9oCPrsalrAnHicV+JytTzFL/1DYESBRePvYjpax2AA45FcozAdQpvbV6bzN/o62jyLFixYsWLFixORFW8F09zfUvNyt2/GWCPNemU+zAAB4HhyLkLyRXwGWTPSrJSlafvhPsAURhgFnixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYr4AFkPUv8hcXidwCgHJTSWll1Ow8hLYAk+lv78VM9HYHiyZmT99wjraPIsWLFixYsWLFixYsWLFfFoylA3UkPYviBLQVbCCzKGXQpMBM8HIB7MX1BI0wJxN/o62jyLFixYsWLFixYsWLE4AE5HEAOORse4RzR5UCVkNoc4WZ1nhk7JJPsrxQCSEpZRN/o62jyLFixYsWLFixYsWJ0KgfPQVuNRRP4U9zfVqMCom/0dbR5FixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFixYsWLFicAAP7/+WWf/xxwxwwRAABjsUqBwSOqae8mja8bY1CaqWtMO8CP4V07DVrDspGqw/9+bGSlVjXjbGpcUQZ0MyUZd14goal8ZhyBnJviGfd2y4FKjKUdRHVC7V/PKmmvJrKy3rRzgBqKsxhjyMSqJiFvgGU8L2/0YPOuiKNBV+P9PWq+6XPmbGXF/wAvfAyPEGe0WN/x6iaIbL3l3ZeWsWM/PpXkbMZIzfeyH5hoV1XSwMYgUcjd8k59OHlxWTv2146AvNuoDfoG2UUKtiLjKUk28r85BNmKsRLoTUXbrZO5yYns7RdXkhlNay+XdQImAN7r1B51IAzL0hrML8JA1YrmLQrn/lqEHtv6Sk7q5yc8Eh32bCDWKxzaMMyMCxxBUvvwk59UmgdBSUkkG6QEsH9AoCN4RU/R8QvU4I/xQCnVHEwEMAg7gen5n+oFKp0ZpYRfHdMm8DZ18h/KW7yuM02maeGOqKBCdM+jxrXpI4/4NwxedVqUt9/4golFcdQiX89ey9pnekuVrrsaBrcXh6ZtzzFfBN4EAAAACzzedN3BmAuHfwQ8WS4LzXdLtFM3Eu9/dbvRln7ulCux66OihfPiEmwiy3yetL0Q5Ibe6crZ4NerjuBNmYWFh6ygj7aki9Yh4mpxpMhE2h3uphqgNkuBhtiFv71uoCBetjMltpLZXdI0mavxs4USldB/A9EF8RDk+9ZeO4++GQ/1cPjN0yaX0YqvLP0Uk8q/1Tst6Dn2Yj1T1tJlfWIzCjoTDzNfCsKhkJcRAR9Cy+Zxv/5ZDJ/Nvoi5qvjvyJ2nMqSHtE02G6TE4W1wx8ZSfz7CEt3a+vWsSIb96gz0NOUNZyrmOiE6WHHIzsDHCoiVqfgnEtupiQ/SQTCrp4u+uArT4RBySLbJ2olKC1o8CZVHdC7HluJBaoXJJ6mfaj3OGtX5susscCT3FaKH+9CsqAXYyyLdmEr3NAAY3jJAcY7gQoxqj82vEhczN5oomuYTzk0j2a9EBw4ltoqDrq+Ljg3IQdmXHXaBM80C6vRdsSCkXhUXS8IzCjGY7D3nskTfJKyhK2Gq654qiwOMyjO2eAAAc8CioEAAAAAav/FH7OCwHCMtm6mNGEhY6hFJHVh9MM8MuHxs+Q2067l2waSOJDb3mBkCa5/qGKAM6wa5MXWXFTNx9y8aPjfjm2LKyo7xfF0KY07L+hMucRRizTLf4k/UCgLkVX7zpXbPERkhP8YOgurD+0X9RwIyM9yPiyT+Q4LoMuB9fymBfwD1i729y0CtgWNzWUFvAL18vuzktSVRcmLnjr6qZk3NOFR9g9nDzGhj+j+L8JUjpL/4iXQ/LbxXbS3LwpsF2uLESDY+JKnB3K+cBgFfVOs1/Rny1OfANLE1vLff+tfJzo4WxAoovSooZzCBD0jVjIgwPsoSvb6W6GSOLN+klPGf1SDmRkjsjq7xrjV6DDJir7NUZy+xYkOU4A/sO8K5jBpzoACL1B80XOnBQp1pEVle3DYl0QIVEa1VYyBiATOuBPfSK+wm4F6VLkTqNogEwQKXZ3oeGMXuAEMT8oIEAL2d0LuBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFWElG2AAAAElJKgAIAAAABgASAQMAAQAAAAEAAAAaAQUAAQAAAFYAAAAbAQUAAQAAAF4AAAAoAQMAAQAAAAIAAAAxAQIAEQAAAGYAAABphwQAAQAAAHgAAAAAAAAAYAAAAAEAAABgAAAAAQAAAHBhaW50Lm5ldCA0LjMuMTAAAAUAAJAHAAQAAAAwMjMwAaADAAEAAAABAAAAAqAEAAEAAADoAwAAA6AEAAEAAADoAwAABaAEAAEAAAC6AAAAAAAAAAIAAQACAAQAAABSOTgAAgAHAAQAAAAwMTAwAAAAAA=="
+          alt="reference"
+        />
+      </div>
+    </div>
+    <div id="help" class="modal">
+      <style>
+        /* The Modal (background) */
+        .modal {
+          display: none;
+          /* Hidden by default */
+          position: fixed;
+          /* Stay in place */
+          z-index: 10;
+          /* Sit on top */
+          padding-top: 30px;
+          /* Location of the box */
+          left: 0;
+          top: 0;
+          width: 100%;
+          /* Full width */
+          height: 100%;
+          /* Full height */
+          overflow: auto;
+          /* Enable scroll if needed */
+          background-color: rgb(0, 0, 0);
+          /* Fallback color */
+          background-color: rgba(0, 0, 0, 0.4);
+          /* Black w/ opacity */
+        }
 
-  </div>
-  <span class="debug"></span>
-  <script>
-    function createGrid() {
-      // https://jsfiddle.net/madstop/bM5Kr/
-      width = document.getElementById("container").offsetWidth + 1;
-      size = Math.floor(width / 10);
-      document.querySelectorAll('.gridlines').forEach(e => e.remove());
-      var i,
-        height = $(window).height(),
-        width = $(window).width(),
-        ratioW = Math.floor(width / size),
-        ratioH = Math.floor(height / size);
+        /* Modal Content */
+        .modal-content {
+          background-color: #fefefe;
+          margin: auto;
+          padding: 40px;
+          padding-top: 20px;
+          border: 1px solid #888;
+          width: 80%;
+          font-size: 18px;
+          font-family: Calibri, sans-serif;
+        }
 
-      for (i = 0; i <= ratioW; i++) // vertical grid lines
-        $('<div />').css({
-          'top': 1,
-          'left': i * size,
-          'width': 1,
-          'height': height
-        })
-        .addClass('gridlines')
-        .insertBefore('#image');
+        /* The Close Button */
+        .close {
+          color: #aaaaaa;
+          float: right;
+          font-size: 30px;
+          font-weight: bold;
+        }
 
-      for (i = 0; i <= ratioH; i++) // horizontal grid lines
-        $('<div />').css({
-          'top': 1 + i * size,
-          'left': 0,
-          'width': width,
-          'height': 1
-        })
-        .addClass('gridlines')
-        .insertBefore('#image');
+        .close:hover,
+        .close:focus {
+          color: #000;
+          text-decoration: none;
+          cursor: pointer;
+        }
 
-      $('.gridlines').show();
-    }
+        .modal-content ul {
+          list-style-type: none;
+          padding: 0;
+          margin: 0;
+        }
 
-    // ------------------------------------------------
+        .modal-content ul li {
+          padding-bottom: 20px;
+        }
 
+        .modal-content ul.l2 li {
+          margin-left: 34px;
+          padding-bottom: 0px;
+        }
 
+        .modal-content .material-icons {
+          display: inline-flex;
+          vertical-align: top;
+          margin-right: 10px;
+          font-size: 20px;
+        }
 
+        kbd {
+          background-color: #eee;
+          border-radius: 3px;
+          border: 1px solid #b4b4b4;
+          box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2),
+            0 2px 0 0 rgba(255, 255, 255, 0.7) inset;
+          color: #333;
+          display: inline-block;
+          font-size: 0.85em;
+          font-weight: 700;
+          line-height: 1;
+          padding: 2px 4px;
+          white-space: nowrap;
+        }
+      </style>
+      <script>
+        // Get the modal
+        var modal = document.getElementById("help");
 
-    document.getElementById("container").addEventListener("mousedown", function (event) {
-      if (event.altKey) {
-        toggleReference()
+        function showHelp() {
+          modal.style.display = "block";
+        }
+
+        function closeHelp() {
+          modal.style.display = "none";
+        }
+      </script>
+      <!-- Modal content -->
+      <div class="modal-content">
+        <span onclick="closeHelp()" class="close" id="close">&times;</span>
+        <h3>How to use</h3>
+        <p>
+          When used in combination with the Node server app, new photos will be
+          opened automatically. Alternatively you can drag-and-drop image files.
+          To open a reference image for comparison <kbd>Ctrl</kbd> drag-and-drop
+          the file.
+        </p>
+        <p>
+          Additional functionality can be accessed via the right-click context
+          menu.
+        </p>
+        <ul>
+          <li>
+            <span class="material-icons">file_copy</span> Copy the active photo
+            to the target folder.
+          </li>
+          <li>
+            <span class="material-icons">delete</span> Delete the copy of the
+            photo from the target folder.
+          </li>
+          <li>
+            <span class="material-icons">sd_card</span> Delete the
+            <em>original photo</em> from the camera.
+            <ul class="l2">
+              <li>
+                To delete <kbd>Ctrl</kbd> + left-click. <em>Warning!</em> Use at
+                your own risk.
+              </li>
+            </ul>
+          </li>
+          <li>
+            <span class="material-icons">save</span> Save the currently
+            displayed file to disk.
+          </li>
+          <li>
+            <span class="material-icons">grid_on</span> Turn the grid on or off.
+          </li>
+          <li>
+            <span class="material-icons">add</span> Turn the crosshair on or
+            off.
+          </li>
+          <li>
+            <span class="material-icons">zoom_in</span> Switch to Zoom view. You
+            can also double-click the image to zoom.
+            <ul class="l2">
+              <li>Use the mouse and scroll wheel to zoom and pan.</li>
+            </ul>
+          </li>
+          <li>
+            <span class="material-icons">compare</span> Switch to Compare view.
+            To toggle the reference <kbd>Alt</kbd> + click-hold left mouse
+            button.
+          </li>
+          <li>
+            <span class="material-icons">category</span> Show/hide the Quick
+            Sort buttons.
+          </li>
+          <li>
+            <span class="material-icons">text_snippet</span> Show/hide the Info
+            area.
+          </li>
+          <li>
+            <span class="material-icons">image</span> Click to copy the filename
+            to the clipboard.
+          </li>
+          <li>
+            <span class="material-icons">photo_camera</span>/&nbsp;&nbsp;<span
+              class="material-icons"
+              >desktop_windows</span
+            >
+            Click to copy the source or target folder to the clipboard.
+          </li>
+        </ul>
+        <p>
+          To place a guide <kbd>Ctrl</kbd> + left-click the image. To clear all
+          guides <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + left-click the image.
+        </p>
+      </div>
+    </div>
+    <span class="debug"></span>
+    <script>
+      function createGrid() {
+        // https://jsfiddle.net/madstop/bM5Kr/
+        width = document.getElementById("container").offsetWidth + 1;
+        size = Math.floor(width / 10);
+        document.querySelectorAll(".gridlines").forEach((e) => e.remove());
+        var i,
+          height = $(window).height(),
+          width = $(window).width(),
+          ratioW = Math.floor(width / size),
+          ratioH = Math.floor(height / size);
+
+        for (
+          i = 0;
+          i <= ratioW;
+          i++ // vertical grid lines
+        )
+          $("<div />")
+            .css({
+              top: 1,
+              left: i * size,
+              width: 1,
+              height: height,
+            })
+            .addClass("gridlines")
+            .insertBefore("#image");
+
+        for (
+          i = 0;
+          i <= ratioH;
+          i++ // horizontal grid lines
+        )
+          $("<div />")
+            .css({
+              top: 1 + i * size,
+              left: 0,
+              width: width,
+              height: 1,
+            })
+            .addClass("gridlines")
+            .insertBefore("#image");
+
+        $(".gridlines").show();
       }
-    });
 
-    document.getElementById("container").addEventListener("mouseup", function (event) {
-      if (event.altKey) {
-        toggleReference()
+      // ------------------------------------------------
+
+      document
+        .getElementById("container")
+        .addEventListener("mousedown", function (event) {
+          if (event.altKey) {
+            toggleReference();
+          }
+        });
+
+      document
+        .getElementById("container")
+        .addEventListener("mouseup", function (event) {
+          if (event.altKey) {
+            toggleReference();
+          }
+        });
+
+      function toggleReference() {
+        if ($("#photo").is(":visible")) {
+          $("#photo").hide();
+          $("#reference").show();
+        } else {
+          $("#photo").show();
+          $("#reference").hide();
+        }
       }
-    });
 
-    function toggleReference() {
-      if ($("#photo").is(':visible')) {
-        $("#photo").hide();
-        $("#reference").show();
-      } else {
-        $("#photo").show();
-        $("#reference").hide();
+      const img = document.querySelector("img#reference");
+      img.ondragstart = () => {
+        return false;
+      };
+
+      dblClicked = false;
+      const container = document.querySelector("#container");
+      container.addEventListener("dblclick", function (e) {
+        dblClicked = true;
+        if (!showCompare) {
+          toggleZoom();
+        }
+      });
+
+      function saveFile() {
+        console.log(filename);
+        downloadBase64File(document.getElementById("photo").src, filename);
       }
-    }
 
-    const img = document.querySelector('img#reference')
-    img.ondragstart = () => {
-      return false;
-    };
+      function downloadBase64File(base64data, filename) {
+        // var base64data = dataurl.replace(/^data:image\/(svg|png|jpg|jpeg|tiff|gif);base64,/, "");
+        linkSource = base64data;
+        const downloadLink = document.createElement("a");
+        document.body.appendChild(downloadLink);
 
-
-    dblClicked = false;
-    const container = document.querySelector('#container');
-    container.addEventListener('dblclick', function (e) {
-      dblClicked = true;
-      if (!showCompare) {
-        toggleZoom();
+        downloadLink.href = linkSource;
+        downloadLink.target = "_self";
+        downloadLink.download = filename;
+        downloadLink.click();
       }
-    });
 
-
-    function saveFile() {
-      console.log(filename);
-      downloadBase64File(document.getElementById("photo").src, filename)
-    }
-
-
-    function downloadBase64File(base64data, filename) {
-      // var base64data = dataurl.replace(/^data:image\/(svg|png|jpg|jpeg|tiff|gif);base64,/, "");
-      linkSource = base64data;
-      const downloadLink = document.createElement('a');
-      document.body.appendChild(downloadLink);
-
-      downloadLink.href = linkSource;
-      downloadLink.target = '_self';
-      downloadLink.download = filename;
-      downloadLink.click();
-    }
-
-
-
-    function dropHandler(event) {
-      event.preventDefault();
-      // event.dataTransfer.files or event.dataTransfer.items
-      /* for (var i = 0; i < event.dataTransfer.files.length; i++) {
+      function dropHandler(event) {
+        event.preventDefault();
+        // event.dataTransfer.files or event.dataTransfer.items
+        /* for (var i = 0; i < event.dataTransfer.files.length; i++) {
         console.log('file[' + i + '].name = ' + event.dataTransfer.files[i].name); 
       } */
-      file = event.dataTransfer.files[0];
-      fileType = file.name.slice((file.name.lastIndexOf(".") - 1 >>> 0) + 2);
-      if ((fileType.toLowerCase() == "jpg") || fileType.toLowerCase() == "png" || fileType.toLowerCase() == "webp" ||
-        fileType.toLowerCase() == "svg") {
-        let reader = new FileReader()
-        reader.readAsDataURL(file)
-        reader.onloadend = function () {
-          let img = document.createElement('img')
-          const ctrl = event.getModifierState("Control");
-          if (ctrl) {
-            document.getElementById("reference").src = reader.result;
-            previousReference = false;
-          } else {
-            document.getElementById("photo").src = reader.result;
-            $('#file-info').text(file.name);
-            filename = file.name;
-            $('#file-info').removeClass("ok");
-            $('#file-info').removeClass("ng");
-            splashScreen = false;
-          }
-        }
-      } else if (file.name === "config.local.json" || file.name === "config.json") {
-        console.log("SETTINGS!!!");
-        let reader = new FileReader()
-        reader.readAsText(file)
-        reader.onloadend = function () {
-          readConfig(reader.result);
-        }
-      } else if (!file.type && file.size % 4096 == 0) {
-        //console.log("FOLDER!!!");
-      }
-    }
-
-    function dragOverHandler(event) {
-      event.preventDefault();
-    }
-
-    function setTargetFolder(folder) {
-      targetfolder = folder;
-      socket.emit('settargetfolder', folder);
-      document.getElementById("target").innerText = folder;
-    }
-
-    function setSourceFolder(folder) {
-      sourcefolder = folder;
-      socket.emit('setsourcefolder', folder);
-      $('#file-info').html('<span class="dot"></span>Watching folder ' + sourcefolder);
-      $('#file-info').removeClass("ng");
-      $('#file-info').addClass("ok");
-      document.getElementById("source").innerText = folder;
-    }
-
-    function readConfig(configData) {
-      config = JSON.parse(configData);
-      setSourceFolder(config.source);
-      setTargetFolder(config.target);
-      extension = config.extension;
-      autocopy = config.settings.autocopy;
-      showgrid = config.settings.showgrid;
-      quicksort = config.settings.quicksort;
-    }
-
-    function toggleQuickSort() {
-      $("#triage").toggleClass("hide");
-      $(".delete-copy").toggleClass("hide-menu-item");
-    }
-
-
-    function toggleGrid() {
-      if (!(showgrid)) {
-        // createGrid();
-        $("#image").addClass("grid");
-        document.getElementById("grid_toggle").innerText = "grid_off";
-      } else {
-        // document.querySelectorAll('.gridlines').forEach(e => e.remove());
-        $("#image").removeClass("grid");
-        document.getElementById("grid_toggle").innerText = "grid_on";
-      }
-      showgrid = !showgrid;
-    }
-
-    function destroyCompare() {
-      console.log("kill compare");
-      $('#compare').remove();
-      compare = undefined;
-      delete compare;
-      $('#image').show();
-      showCompare = false;
-    }
-
-    function createCompare() {
-      if (zoomActive) {
-        closeZoom()
-      };
-      console.log("create compare");
-      $("<div id='compare'></div>").insertBefore($("#image"));
-      var compare
-      options = {
-        el: '#compare', // The container, required
-        line: true, // Dividing line, default true
-        lineColor: "black" // Dividing line color, default rgba(0,0,0,0.5)
-      }
-
-      options.height = document.getElementById("container").offsetHeight - 1 + 'px';
-      options.width = document.getElementById("container").offsetWidth - 1 + 'px';
-      options.beforeImg = $('#photo').attr('src');
-      options.afterImg = $('#reference').attr('src');
-      compare = new SliderBar(options);
-      $('#image').hide();
-      showCompare = true;
-
-      $("#compare").append(
-        '<div onclick="toggleCompare()" class="close-button"><span class="material-icons">close</span></div>')
-    }
-
-
-
-    function toggleCompare() {
-      console.log(showCompare);
-      if (showCompare) {
-        destroyCompare();
-      } else {
-        createCompare();
-      }
-    }
-
-
-    var zoom;
-
-    function activateZoom() {
-      if (showCompare) {
-        destroyCompare()
-      };
-      console.log("zooom on!")
-      options = {
-        fill: "cover",
-        height: '100%',
-        // slider: true,
-        slider: {
-          el: '.custom-slider',
-          direction: 'vertical'
-        },
-        zoomer: false
-      }
-
-      $("<div id='zoom'></div>").insertBefore($("#image"));
-
-      $('#zoom').attr("data-zoomist-src", $('#photo').attr('src'));
-      zoom = new Zoomist("#zoom", options);
-      document.getElementById("zoom_toggle").innerText = "zoom_out";
-      zoom.on('ready', function () {
-        if (dblClicked) {
-          zoom.zoom(0.1);
-          dblClicked = false;
-        }
-      })
-      document.getElementById('image').style.visibility = 'hidden';
-      zoomActive = true;
-
-      $("#zoom").append(
-        '<div onclick="closeZoom()" class="close-button"><span class="material-icons">close</span></div>')
-
-    }
-
-    function closeZoom() {
-      document.getElementById('image').style.visibility = 'visible';
-      zoom.reset();
-      zoom.destroy();
-      $('#zoom').remove();
-      document.getElementById("zoom_toggle").innerText = "zoom_in";
-      zoomActive = false;
-    }
-
-    function toggleZoom() {
-      if (zoomActive) {
-        closeZoom();
-      } else {
-        activateZoom();
-      }
-    }
-
-
-    function toggleCrosshair() {
-      if (showCrosshair) {
-        $('.hair').addClass("hide");
-        showCrosshair = false;
-      } else {
-        $('.hair').removeClass("hide");
-        showCrosshair = true;
-      }
-    }
-
-    function toggleFileinfo() {
-      if (showFileinfo) {
-        $('#file-info').addClass("hide");
-        showFileinfo = false;
-      } else {
-        $('#file-info').removeClass("hide");
-        showFileinfo = true;
-      }
-    }
-
-
-    function hideMenu() {
-      document.getElementById("context-menu").style.display = 'none';
-      //document.getElementById("context-menu").classList.remove("active");
-    }
-
-    window.addEventListener('load', function () {
-      console.log("loaded");
-      document.getElementById("container").addEventListener("contextmenu", function (event) {
-        console.log("TATATATA");
-        event.preventDefault();
-
-        var contextElement = document.getElementById("context-menu");
-
-        contextElement.addEventListener("click", hideMenu);
-        contextElement.addEventListener("mouseleave", hideMenu);
-
-
-        contextElement.style.setProperty('--mouse-x', event.clientX - 4 + 'px');
-        contextElement.style.setProperty('--mouse-y', event.clientY - 4 + 'px');
-        contextElement.style.display = 'block';
-
-        //contextElement.style.top =  (event.clientY - 4) + "px";
-        //contextElement.style.left = (event.clientX - 4) + "px";
-        //contextElement.classList.add("active");
-
-      });
-    });
-
-
-    function resizeActions() {
-
-    }
-    window.onresize = resizeActions;
-
-    document.addEventListener("keydown", e => {
-      if (e.key === "F1") {
-        showHelp();
-        e.preventDefault()
-      }
-    })
-  </script>
-  <script>
-    /**
-     * @license MIT
-     * topbar 1.0.0, 2021-01-06
-     * http://buunguyen.github.io/topbar
-     * Copyright (c) 2021 Buu Nguyen
-     */
-    (function (window, document) {
-      "use strict";
-      ! function () {
-        for (var lastTime = 0, vendors = ["ms", "moz", "webkit", "o"], x = 0; x < vendors.length && !window
-          .requestAnimationFrame; ++x) window.requestAnimationFrame = window[vendors[x] + "RequestAnimationFrame"],
-          window.cancelAnimationFrame = window[vendors[x] + "CancelAnimationFrame"] || window[vendors[x] +
-            "CancelRequestAnimationFrame"];
-        window.requestAnimationFrame || (window.requestAnimationFrame = function (callback, element) {
-          var currTime = (new Date).getTime(),
-            timeToCall = Math.max(0, 16 - (currTime - lastTime)),
-            id = window.setTimeout(function () {
-              callback(currTime + timeToCall)
-            }, timeToCall);
-          return lastTime = currTime + timeToCall, id
-        }), window.cancelAnimationFrame || (window.cancelAnimationFrame = function (id) {
-          clearTimeout(id)
-        })
-      }();
-
-      function repaint() {
-        canvas.width = window.innerWidth, canvas.height = 5 * options.barThickness;
-        var ctx = canvas.getContext("2d");
-        ctx.shadowBlur = options.shadowBlur, ctx.shadowColor = options.shadowColor;
-        var stop, lineGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-        for (stop in options.barColors) lineGradient.addColorStop(stop, options.barColors[stop]);
-        ctx.lineWidth = options.barThickness, ctx.beginPath(), ctx.moveTo(0, options.barThickness / 2), ctx.lineTo(
-            Math.ceil(currentProgress * canvas.width), options.barThickness / 2), ctx.strokeStyle = lineGradient, ctx
-          .stroke()
-      }
-      var canvas, progressTimerId, fadeTimerId, currentProgress, showing, options = {
-          autoRun: !0,
-          barThickness: 3,
-          barColors: {
-            0: "rgba(26,  188, 156, .9)",
-            ".25": "rgba(52,  152, 219, .9)",
-            ".50": "rgba(241, 196, 15,  .9)",
-            ".75": "rgba(230, 126, 34,  .9)",
-            "1.0": "rgba(211, 84,  0,   .9)"
-          },
-          shadowBlur: 10,
-          shadowColor: "rgba(0,   0,   0,   .6)",
-          className: null
-        },
-        topbar = {
-          config: function (opts) {
-            for (var key in opts) options.hasOwnProperty(key) && (options[key] = opts[key])
-          },
-          show: function () {
-            var type, handler, elem;
-            showing || (showing = !0, null !== fadeTimerId && window.cancelAnimationFrame(fadeTimerId), canvas || ((
-                  elem = (canvas = document.createElement("canvas")).style).position = "fixed", elem.top = elem
-                .left = elem.right = elem.margin = elem.padding = 0, elem.zIndex = 100001, elem.display = "none",
-                options.className && canvas.classList.add(options.className), document.body.appendChild(canvas),
-                type = "resize", handler = repaint, (elem = window).addEventListener ? elem.addEventListener(type,
-                  handler, !1) : elem.attachEvent ? elem.attachEvent("on" + type, handler) : elem["on" + type] =
-                handler), canvas.style.opacity = 1, canvas.style.display = "block", topbar.progress(0), options
-              .autoRun && function loop() {
-                progressTimerId = window.requestAnimationFrame(loop), topbar.progress("+" + .05 * Math.pow(1 -
-                  Math.sqrt(currentProgress), 2))
-              }())
-          },
-          progress: function (to) {
-            return void 0 === to || ("string" == typeof to && (to = (0 <= to.indexOf("+") || 0 <= to.indexOf("-") ?
-                currentProgress : 0) + parseFloat(to)), currentProgress = 1 < to ? 1 : to, repaint()),
-              currentProgress
-          },
-          hide: function () {
-            showing && (showing = !1, null != progressTimerId && (window.cancelAnimationFrame(progressTimerId),
-              progressTimerId = null), function loop() {
-              return 1 <= topbar.progress("+.1") && (canvas.style.opacity -= .05, canvas.style.opacity <= .05) ?
-                (canvas.style.display = "none", void(fadeTimerId = null)) : void(fadeTimerId = window
-                  .requestAnimationFrame(loop))
-            }())
-          }
-        };
-      "object" == typeof module && "object" == typeof module.exports ? module.exports = topbar : "function" ==
-        typeof define && define.amd ? define(function () {
-          return topbar
-        }) : this.topbar = topbar
-    }).call(this, window, document);
-
-    topbar.config({
-      autoRun: true,
-      barThickness: 4,
-      barColors: {
-        '0': 'white',
-        '1.0': 'white'
-      }
-    })
-  </script>
-  <script>
-    function connectSnd() {
-      if (playAudio) {
-        Promise.resolve()
-          .then(() => beep(200, 440, 10))
-          .then(() => delay(100))
-          .then(() => beep(200, 880, 10));
-      }
-    }
-
-    function disconnectSnd() {
-      if (playAudio) {
-        Promise.resolve()
-          .then(() => beep(200, 880, 10))
-          .then(() => delay(100))
-          .then(() => beep(200, 440, 10));
-      }
-    }
-
-    function errorSnd() {
-      if (playAudio) {
-        beep(600, 1000, 10);
-      }
-    }
-
-    function newphotoSnd() {
-      if (playAudio) {
-        beep(50, 2200, 10);
-      }
-    }
-
-    // The browser will limit the number of concurrent audio contexts
-    // So be sure to re-use them whenever you can
-    const myAudioContext = new AudioContext();
-
-    function delay(duration) {
-      return new Promise((resolve) => {
-        setTimeout(() => resolve(), duration);
-      });
-    }
-
-
-    /**
-     * Helper function to emit a beep sound in the browser using the Web Audio API.
-     * 
-     * @param {number} duration - The duration of the beep sound in milliseconds.
-     * @param {number} frequency - The frequency of the beep sound.
-     * @param {number} volume - The volume of the beep sound.
-     * 
-     * @returns {Promise} - A promise that resolves when the beep sound is finished.
-     * https://ourcodeworld.com/articles/read/1627/how-to-easily-generate-a-beep-notification-sound-with-javascript
-     */
-    function beep(duration, frequency, volume) {
-      return new Promise((resolve, reject) => {
-        // Set default duration if not provided
-        duration = duration || 200;
-        frequency = frequency || 440;
-        volume = volume || 10;
-
-        try {
-          let oscillatorNode = myAudioContext.createOscillator();
-          let gainNode = myAudioContext.createGain();
-          oscillatorNode.connect(gainNode);
-
-          // Set the oscillator frequency in hertz
-          oscillatorNode.frequency.value = frequency;
-
-          // Set the type of oscillator
-          oscillatorNode.type = "sine"; // square
-          gainNode.connect(myAudioContext.destination);
-
-          // Set the gain to the volume
-          gainNode.gain.value = volume * 0.01;
-
-          // Start audio with the desired duration
-          oscillatorNode.start(myAudioContext.currentTime);
-          oscillatorNode.stop(myAudioContext.currentTime + duration * 0.001);
-
-          // Resolve the promise when the sound is finished
-          oscillatorNode.onended = () => {
-            resolve();
+        file = event.dataTransfer.files[0];
+        fileType = file.name.slice(
+          ((file.name.lastIndexOf(".") - 1) >>> 0) + 2
+        );
+        if (
+          fileType.toLowerCase() == "jpg" ||
+          fileType.toLowerCase() == "png" ||
+          fileType.toLowerCase() == "webp" ||
+          fileType.toLowerCase() == "svg"
+        ) {
+          let reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onloadend = function () {
+            let img = document.createElement("img");
+            const ctrl = event.getModifierState("Control");
+            if (ctrl) {
+              document.getElementById("reference").src = reader.result;
+              previousReference = false;
+            } else {
+              document.getElementById("photo").src = reader.result;
+              $("#file-info").text(file.name);
+              filename = file.name;
+              $("#file-info").removeClass("ok");
+              $("#file-info").removeClass("ng");
+              splashScreen = false;
+            }
           };
-        } catch (error) {
-          reject(error);
+        } else if (
+          file.name === "config.local.json" ||
+          file.name === "config.json"
+        ) {
+          console.log("SETTINGS!!!");
+          let reader = new FileReader();
+          reader.readAsText(file);
+          reader.onloadend = function () {
+            readConfig(reader.result);
+          };
+        } else if (!file.type && file.size % 4096 == 0) {
+          //console.log("FOLDER!!!");
+        }
+      }
+
+      function dragOverHandler(event) {
+        event.preventDefault();
+      }
+
+      function setTargetFolder(folder) {
+        targetfolder = folder;
+        socket.emit("settargetfolder", folder);
+        document.getElementById("target").innerText = folder;
+      }
+
+      function setSourceFolder(folder) {
+        sourcefolder = folder;
+        socket.emit("setsourcefolder", folder);
+        $("#file-info").html(
+          '<span class="dot"></span>Watching folder ' + sourcefolder
+        );
+        $("#file-info").removeClass("ng");
+        $("#file-info").addClass("ok");
+        document.getElementById("source").innerText = folder;
+      }
+
+      function readConfig(configData) {
+        config = JSON.parse(configData);
+        setSourceFolder(config.source);
+        setTargetFolder(config.target);
+        extension = config.extension;
+        autocopy = config.settings.autocopy;
+        showgrid = config.settings.showgrid;
+        quicksort = config.settings.quicksort;
+      }
+
+      function toggleQuickSort() {
+        $("#triage").toggleClass("hide");
+        $(".delete-copy").toggleClass("hide-menu-item");
+      }
+
+      function toggleGrid() {
+        if (!showgrid) {
+          // createGrid();
+          $("#image").addClass("grid");
+          document.getElementById("grid_toggle").innerText = "grid_off";
+        } else {
+          // document.querySelectorAll('.gridlines').forEach(e => e.remove());
+          $("#image").removeClass("grid");
+          document.getElementById("grid_toggle").innerText = "grid_on";
+        }
+        showgrid = !showgrid;
+      }
+
+      function destroyCompare() {
+        console.log("kill compare");
+        $("#compare").remove();
+        compare = undefined;
+        delete compare;
+        $("#image").show();
+        showCompare = false;
+      }
+
+      function createCompare() {
+        if (zoomActive) {
+          closeZoom();
+        }
+        console.log("create compare");
+        $("<div id='compare'></div>").insertBefore($("#image"));
+        var compare;
+        options = {
+          el: "#compare", // The container, required
+          line: true, // Dividing line, default true
+          lineColor: "black", // Dividing line color, default rgba(0,0,0,0.5)
+        };
+
+        options.height =
+          document.getElementById("container").offsetHeight - 1 + "px";
+        options.width =
+          document.getElementById("container").offsetWidth - 1 + "px";
+        options.beforeImg = $("#photo").attr("src");
+        options.afterImg = $("#reference").attr("src");
+        compare = new SliderBar(options);
+        $("#image").hide();
+        showCompare = true;
+
+        $("#compare").append(
+          '<div onclick="toggleCompare()" class="close-button"><span class="material-icons">close</span></div>'
+        );
+      }
+
+      function toggleCompare() {
+        console.log(showCompare);
+        if (showCompare) {
+          destroyCompare();
+        } else {
+          createCompare();
+        }
+      }
+
+      var zoom;
+
+      function activateZoom() {
+        if (showCompare) {
+          destroyCompare();
+        }
+        console.log("zooom on!");
+        options = {
+          fill: "cover",
+          height: "100%",
+          // slider: true,
+          slider: {
+            el: ".custom-slider",
+            direction: "vertical",
+          },
+          zoomer: false,
+        };
+
+        $("<div id='zoom'></div>").insertBefore($("#image"));
+
+        $("#zoom").attr("data-zoomist-src", $("#photo").attr("src"));
+        zoom = new Zoomist("#zoom", options);
+        document.getElementById("zoom_toggle").innerText = "zoom_out";
+        zoom.on("ready", function () {
+          if (dblClicked) {
+            zoom.zoom(0.1);
+            dblClicked = false;
+          }
+        });
+        document.getElementById("image").style.visibility = "hidden";
+        zoomActive = true;
+
+        $("#zoom").append(
+          '<div onclick="closeZoom()" class="close-button"><span class="material-icons">close</span></div>'
+        );
+      }
+
+      function closeZoom() {
+        document.getElementById("image").style.visibility = "visible";
+        zoom.reset();
+        zoom.destroy();
+        $("#zoom").remove();
+        document.getElementById("zoom_toggle").innerText = "zoom_in";
+        zoomActive = false;
+      }
+
+      function toggleZoom() {
+        if (zoomActive) {
+          closeZoom();
+        } else {
+          activateZoom();
+        }
+      }
+
+      function toggleCrosshair() {
+        if (showCrosshair) {
+          $(".hair").addClass("hide");
+          showCrosshair = false;
+        } else {
+          $(".hair").removeClass("hide");
+          showCrosshair = true;
+        }
+      }
+
+      function toggleFileinfo() {
+        if (showFileinfo) {
+          $("#file-info").addClass("hide");
+          showFileinfo = false;
+        } else {
+          $("#file-info").removeClass("hide");
+          showFileinfo = true;
+        }
+      }
+
+      function hideMenu() {
+        document.getElementById("context-menu").style.display = "none";
+        //document.getElementById("context-menu").classList.remove("active");
+      }
+
+      window.addEventListener("load", function () {
+        console.log("loaded");
+        document
+          .getElementById("container")
+          .addEventListener("contextmenu", function (event) {
+            console.log("TATATATA");
+            event.preventDefault();
+
+            var contextElement = document.getElementById("context-menu");
+
+            contextElement.addEventListener("click", hideMenu);
+            contextElement.addEventListener("mouseleave", hideMenu);
+
+            contextElement.style.setProperty(
+              "--mouse-x",
+              event.clientX - 4 + "px"
+            );
+            contextElement.style.setProperty(
+              "--mouse-y",
+              event.clientY - 4 + "px"
+            );
+            contextElement.style.display = "block";
+
+            //contextElement.style.top =  (event.clientY - 4) + "px";
+            //contextElement.style.left = (event.clientX - 4) + "px";
+            //contextElement.classList.add("active");
+          });
+      });
+
+      function resizeActions() {}
+      window.onresize = resizeActions;
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "F1") {
+          showHelp();
+          e.preventDefault();
         }
       });
-    }
+    </script>
+    <script>
+      /**
+       * @license MIT
+       * topbar 1.0.0, 2021-01-06
+       * http://buunguyen.github.io/topbar
+       * Copyright (c) 2021 Buu Nguyen
+       */
+      (function (window, document) {
+        "use strict";
+        !(function () {
+          for (
+            var lastTime = 0, vendors = ["ms", "moz", "webkit", "o"], x = 0;
+            x < vendors.length && !window.requestAnimationFrame;
+            ++x
+          )
+            (window.requestAnimationFrame =
+              window[vendors[x] + "RequestAnimationFrame"]),
+              (window.cancelAnimationFrame =
+                window[vendors[x] + "CancelAnimationFrame"] ||
+                window[vendors[x] + "CancelRequestAnimationFrame"]);
+          window.requestAnimationFrame ||
+            (window.requestAnimationFrame = function (callback, element) {
+              var currTime = new Date().getTime(),
+                timeToCall = Math.max(0, 16 - (currTime - lastTime)),
+                id = window.setTimeout(function () {
+                  callback(currTime + timeToCall);
+                }, timeToCall);
+              return (lastTime = currTime + timeToCall), id;
+            }),
+            window.cancelAnimationFrame ||
+              (window.cancelAnimationFrame = function (id) {
+                clearTimeout(id);
+              });
+        })();
 
-    // https://gist.github.com/hyamamoto/fd435505d29ebfa3d9716fd2be8d42f0
-    function hashCode(s) {
-      let h = 0;
-      for (let i = 0; i < s.length; i++)
-        h = Math.imul(31, h) + s.charCodeAt(i) | 0;
-      return h;
-    }
-  </script>
-</body>
+        function repaint() {
+          (canvas.width = window.innerWidth),
+            (canvas.height = 5 * options.barThickness);
+          var ctx = canvas.getContext("2d");
+          (ctx.shadowBlur = options.shadowBlur),
+            (ctx.shadowColor = options.shadowColor);
+          var stop,
+            lineGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+          for (stop in options.barColors)
+            lineGradient.addColorStop(stop, options.barColors[stop]);
+          (ctx.lineWidth = options.barThickness),
+            ctx.beginPath(),
+            ctx.moveTo(0, options.barThickness / 2),
+            ctx.lineTo(
+              Math.ceil(currentProgress * canvas.width),
+              options.barThickness / 2
+            ),
+            (ctx.strokeStyle = lineGradient),
+            ctx.stroke();
+        }
+        var canvas,
+          progressTimerId,
+          fadeTimerId,
+          currentProgress,
+          showing,
+          options = {
+            autoRun: !0,
+            barThickness: 3,
+            barColors: {
+              0: "rgba(26,  188, 156, .9)",
+              ".25": "rgba(52,  152, 219, .9)",
+              ".50": "rgba(241, 196, 15,  .9)",
+              ".75": "rgba(230, 126, 34,  .9)",
+              "1.0": "rgba(211, 84,  0,   .9)",
+            },
+            shadowBlur: 10,
+            shadowColor: "rgba(0,   0,   0,   .6)",
+            className: null,
+          },
+          topbar = {
+            config: function (opts) {
+              for (var key in opts)
+                options.hasOwnProperty(key) && (options[key] = opts[key]);
+            },
+            show: function () {
+              var type, handler, elem;
+              showing ||
+                ((showing = !0),
+                null !== fadeTimerId &&
+                  window.cancelAnimationFrame(fadeTimerId),
+                canvas ||
+                  (((elem = (canvas = document.createElement("canvas"))
+                    .style).position = "fixed"),
+                  (elem.top =
+                    elem.left =
+                    elem.right =
+                    elem.margin =
+                    elem.padding =
+                      0),
+                  (elem.zIndex = 100001),
+                  (elem.display = "none"),
+                  options.className && canvas.classList.add(options.className),
+                  document.body.appendChild(canvas),
+                  (type = "resize"),
+                  (handler = repaint),
+                  (elem = window).addEventListener
+                    ? elem.addEventListener(type, handler, !1)
+                    : elem.attachEvent
+                    ? elem.attachEvent("on" + type, handler)
+                    : (elem["on" + type] = handler)),
+                (canvas.style.opacity = 1),
+                (canvas.style.display = "block"),
+                topbar.progress(0),
+                options.autoRun &&
+                  (function loop() {
+                    (progressTimerId = window.requestAnimationFrame(loop)),
+                      topbar.progress(
+                        "+" + 0.05 * Math.pow(1 - Math.sqrt(currentProgress), 2)
+                      );
+                  })());
+            },
+            progress: function (to) {
+              return (
+                void 0 === to ||
+                  ("string" == typeof to &&
+                    (to =
+                      (0 <= to.indexOf("+") || 0 <= to.indexOf("-")
+                        ? currentProgress
+                        : 0) + parseFloat(to)),
+                  (currentProgress = 1 < to ? 1 : to),
+                  repaint()),
+                currentProgress
+              );
+            },
+            hide: function () {
+              showing &&
+                ((showing = !1),
+                null != progressTimerId &&
+                  (window.cancelAnimationFrame(progressTimerId),
+                  (progressTimerId = null)),
+                (function loop() {
+                  return 1 <= topbar.progress("+.1") &&
+                    ((canvas.style.opacity -= 0.05),
+                    canvas.style.opacity <= 0.05)
+                    ? ((canvas.style.display = "none"),
+                      void (fadeTimerId = null))
+                    : void (fadeTimerId = window.requestAnimationFrame(loop));
+                })());
+            },
+          };
+        "object" == typeof module && "object" == typeof module.exports
+          ? (module.exports = topbar)
+          : "function" == typeof define && define.amd
+          ? define(function () {
+              return topbar;
+            })
+          : (this.topbar = topbar);
+      }.call(this, window, document));
 
+      topbar.config({
+        autoRun: true,
+        barThickness: 4,
+        barColors: {
+          0: "white",
+          "1.0": "white",
+        },
+      });
+    </script>
+    <script>
+      function connectSnd() {
+        if (playAudio) {
+          Promise.resolve()
+            .then(() => beep(200, 440, 10))
+            .then(() => delay(100))
+            .then(() => beep(200, 880, 10));
+        }
+      }
+
+      function disconnectSnd() {
+        if (playAudio) {
+          Promise.resolve()
+            .then(() => beep(200, 880, 10))
+            .then(() => delay(100))
+            .then(() => beep(200, 440, 10));
+        }
+      }
+
+      function errorSnd() {
+        if (playAudio) {
+          beep(600, 1000, 10);
+        }
+      }
+
+      function newphotoSnd() {
+        if (playAudio) {
+          beep(50, 2200, 10);
+        }
+      }
+
+      // The browser will limit the number of concurrent audio contexts
+      // So be sure to re-use them whenever you can
+      const myAudioContext = new AudioContext();
+
+      function delay(duration) {
+        return new Promise((resolve) => {
+          setTimeout(() => resolve(), duration);
+        });
+      }
+
+      /**
+       * Helper function to emit a beep sound in the browser using the Web Audio API.
+       *
+       * @param {number} duration - The duration of the beep sound in milliseconds.
+       * @param {number} frequency - The frequency of the beep sound.
+       * @param {number} volume - The volume of the beep sound.
+       *
+       * @returns {Promise} - A promise that resolves when the beep sound is finished.
+       * https://ourcodeworld.com/articles/read/1627/how-to-easily-generate-a-beep-notification-sound-with-javascript
+       */
+      function beep(duration, frequency, volume) {
+        return new Promise((resolve, reject) => {
+          // Set default duration if not provided
+          duration = duration || 200;
+          frequency = frequency || 440;
+          volume = volume || 10;
+
+          try {
+            let oscillatorNode = myAudioContext.createOscillator();
+            let gainNode = myAudioContext.createGain();
+            oscillatorNode.connect(gainNode);
+
+            // Set the oscillator frequency in hertz
+            oscillatorNode.frequency.value = frequency;
+
+            // Set the type of oscillator
+            oscillatorNode.type = "sine"; // square
+            gainNode.connect(myAudioContext.destination);
+
+            // Set the gain to the volume
+            gainNode.gain.value = volume * 0.01;
+
+            // Start audio with the desired duration
+            oscillatorNode.start(myAudioContext.currentTime);
+            oscillatorNode.stop(myAudioContext.currentTime + duration * 0.001);
+
+            // Resolve the promise when the sound is finished
+            oscillatorNode.onended = () => {
+              resolve();
+            };
+          } catch (error) {
+            reject(error);
+          }
+        });
+      }
+
+      // https://gist.github.com/hyamamoto/fd435505d29ebfa3d9716fd2be8d42f0
+      function hashCode(s) {
+        let h = 0;
+        for (let i = 0; i < s.length; i++)
+          h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+        return h;
+      }
+    </script>
+  </body>
 </html>

@@ -1,15 +1,15 @@
-const express = require('express');
+const express = require("express");
 const app = express();
-const http = require('http');
+const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-const chokidar = require('chokidar');
+const chokidar = require("chokidar");
 const { exec } = require("child_process");
-const fs = require('fs');
+const fs = require("fs");
 
-const ExifReader = require('exifreader');
+const ExifReader = require("exifreader");
 
 //var sourceFolder = '.\\original\\';
 //var targetFolder = '.\\copy\\';
@@ -28,9 +28,9 @@ const ExifReader = require('exifreader');
 
 // in case additional server side image processing or conversions are needed https://sharp.pixelplumbing.com/
 
-const path = require ("path")
+const path = require("path");
 
-let rawdata = fs.readFileSync(path.join(__dirname,'config.json'));
+let rawdata = fs.readFileSync(path.join(__dirname, "config.json"));
 let config = JSON.parse(rawdata);
 let sourceFolder = config.source;
 let targetFolder = config.target;
@@ -45,215 +45,215 @@ let exepath = __dirname.toString();
 console.log(exepath);
 var regExp = /(.+\\)resources\\.+/g;
 if (regExp.test(exepath)) {
-	if (exepath.match(regExp).length > 0) {
-		match = regExp.exec(exepath);
-		exepath = match[1];	
-	}
+  if (exepath.match(regExp).length > 0) {
+    match = regExp.exec(exepath);
+    exepath = match[1];
+  }
 }
 
-
 function readConfig(configFile) {
-	rawdata = fs.readFileSync(configFile);
-	config = JSON.parse(rawdata);
-	sourceFolder = config.source;
-	targetFolder = config.target;
-	extension = config.extension;
-	autoCopy = config.settings.autocopy;
-	showGrid = config.settings.showgrid;
-	quickSort = config.settings.quicksort;
-	
-	playAudio = config.settings.playaudio;
-	checkSettings = config.settings.checksettings;
-	cameraDefaults = config.defaults;  
+  rawdata = fs.readFileSync(configFile);
+  config = JSON.parse(rawdata);
+  sourceFolder = config.source;
+  targetFolder = config.target;
+  extension = config.extension;
+  autoCopy = config.settings.autocopy;
+  showGrid = config.settings.showgrid;
+  quickSort = config.settings.quicksort;
+
+  playAudio = config.settings.playaudio;
+  checkSettings = config.settings.checksettings;
+  cameraDefaults = config.defaults;
 }
 
 function writeConfig(configFile, configData) {
-	if (!(fs.existsSync(configFile))) {
-		fs.writeFileSync(configFile, configData);
-	}
+  if (!fs.existsSync(configFile)) {
+    fs.writeFileSync(configFile, configData);
+  }
 }
-
 
 function getReferenceFile(referencepath) {
-	refFile = referencepath; // 'reference.jpg'
-	if (fs.existsSync(refFile)) {
-		imageAsBase64 = "data:image/jpeg;base64," + fs.readFileSync(refFile, 'base64');
-		io.emit('reference', imageAsBase64);
-	}
+  refFile = referencepath; // 'reference.jpg'
+  if (fs.existsSync(refFile)) {
+    imageAsBase64 =
+      "data:image/jpeg;base64," + fs.readFileSync(refFile, "base64");
+    io.emit("reference", imageAsBase64);
+  }
 }
 
-const inspector = require('inspector');
+const inspector = require("inspector");
 // function isInDebugMode() { return inspector.url() !== undefined; }
 
 let isApp = false;
 
 // Read command line argument
 if (inspector.url() !== undefined) {
-	console.log("DEBUG MODE");
+  console.log("DEBUG MODE");
 } else {
-
-	if(isElectron()){
-		isApp = true;
-		console.log("Electron");
-		appConfig = path.join(exepath,'config.local.json');
-		console.log(exepath);
-		if (fs.existsSync(appConfig)) {
-			readConfig(appConfig);
-		} else {
-			console.log(appConfig);
-			writeConfig(appConfig, rawdata);
-		}
-	}else{
-		isApp = false;
-		if (fs.existsSync('config.local.json')) {
-			readConfig(path.join(__dirname,'config.local.json'));
-		} else {
-			// no local config
-			writeConfig(path.join(__dirname,'config.local.json'), rawdata)
-		}
-		if (process.argv.length >= 3) {
-			sourceFolder = process.argv[2];
-		}		
-	}
+  if (isElectron()) {
+    isApp = true;
+    console.log("Electron");
+    appConfig = path.join(exepath, "config.local.json");
+    console.log(exepath);
+    if (fs.existsSync(appConfig)) {
+      readConfig(appConfig);
+    } else {
+      console.log(appConfig);
+      writeConfig(appConfig, rawdata);
+    }
+  } else {
+    isApp = false;
+    if (fs.existsSync("config.local.json")) {
+      readConfig(path.join(__dirname, "config.local.json"));
+    } else {
+      // no local config
+      writeConfig(path.join(__dirname, "config.local.json"), rawdata);
+    }
+    if (process.argv.length >= 3) {
+      sourceFolder = process.argv[2];
+    }
+  }
 }
 
 app.use(express.static("."));
-const favicon = require('express-favicon');
-app.use(favicon(__dirname + '/SimplePhotoSync.ico'));
+const favicon = require("express-favicon");
+app.use(favicon(__dirname + "/SimplePhotoSync.ico"));
 
-app.use(function(req, res, next) {
-    res.setHeader("Content-Security-Policy", "script-src 'self' 'unsafe-inline' http://localhost:" + serverPort + " https://ajax.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdnjs.com https://code.jquery.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; style-src * 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:;");
-    return next();
+app.use(function (req, res, next) {
+  res.setHeader(
+    "Content-Security-Policy",
+    "script-src 'self' 'unsafe-inline' http://localhost:" +
+      serverPort +
+      " https://ajax.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdnjs.com https://code.jquery.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; style-src * 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:;"
+  );
+  return next();
 });
 
+app.get("/", (req, res) => {
+  // res.send('<h1>Hello world</h1>');
+  res.sendFile(__dirname + "/index.html");
+});
 
-app.get('/', (req, res) => {
-	// res.send('<h1>Hello world</h1>');
-	res.sendFile(__dirname + '/index.html');
+app.get("/test/", (req, res) => {
+  res.sendFile(__dirname + "/test/test.html");
+});
+
+let serverPort = 3000;
+
+server.listen(serverPort, () => {
+  remoteAddress = getServerIp();
+  console.log(
+    "listening on http://localhost:" +
+      serverPort +
+      " and http://" +
+      remoteAddress +
+      ":" +
+      serverPort
+  );
+});
+
+function getServerIp() {
+  var os = require("os");
+  var ifaces = os.networkInterfaces();
+  var values = Object.keys(ifaces).map(function (name) {
+    return ifaces[name];
   });
-
-  app.get('/test/', (req, res) => {
-	res.sendFile(__dirname + '/test/test.html');
+  values = [].concat.apply([], values).filter(function (val) {
+    return val.family == "IPv4" && val.internal == false;
   });
-
-  let serverPort = 3000;
-
-  server.listen(serverPort, () => {
-	remoteAddress = getServerIp();  
-	console.log('listening on http://localhost:' + serverPort + ' and http://' + remoteAddress + ":" + serverPort );
-  });
-
-  function getServerIp() {
-
-	var os = require('os');
-	var ifaces = os.networkInterfaces();
-	var values = Object.keys(ifaces).map(function(name) {
-	  return ifaces[name];
-	});
-	values = [].concat.apply([], values).filter(function(val){
-	  return val.family == 'IPv4' && val.internal == false;
-	});
-	for (let i = 0; i < values.length; i++) {
-		// console.log(values[i].address);
-		if (!(values[i].address.startsWith("172"))) {
-			return values[i].address;
-		}
-	  }
-	// return values.length ? values[1].address : '0.0.0.0';
+  for (let i = 0; i < values.length; i++) {
+    // console.log(values[i].address);
+    if (!values[i].address.startsWith("172")) {
+      return values[i].address;
+    }
   }
+  // return values.length ? values[1].address : '0.0.0.0';
+}
 
-
-  io.on('connection', (socket) => {
-	console.log('page accessed');
-	socket.on('disconnect', () => {
-	  console.log('connection reset');
-	});
-
-	socket.on('getconfig', (msg) => {
-		config.remoteaddress = remoteAddress;
-		io.emit('config', config);
-	});
-
-	socket.on('getreference', (msg) => {
-		getReferenceFile(path.join(exepath,"reference.jpg"));
-	});
-
-	socket.on('getexepath', (msg) => {
-	
-		io.emit('exepath', exepath);
-	});
-
-	socket.on('settargetfolder', (msg) => {
-		targetFolder = msg;
-	});
-
-	socket.on('setsourcefolder', (msg) => {
-		watcher.unwatch(sourceFolder);
-		sourceFolder = msg;
-		watcher.add(sourceFolder);  
-	})
-
-
-
-  socket.on('delete target', (msg) => {
-	fs.unlink(targetFile, (err) => {
-		if (err) {
-		  console.error(err)
-		  return
-		}
-		console.log('deleted file: ' + targetFile);
-	  })
+io.on("connection", (socket) => {
+  console.log("page accessed");
+  socket.on("disconnect", () => {
+    console.log("connection reset");
   });
 
-  socket.on('delete camera', (msg) => {
-	fs.unlink(sourceFile, (err) => {
-		if (err) {
-		  console.error(err)
-		  return
-		}
-		console.log('deleted file: ' + sourceFile);
-	  })
+  socket.on("getconfig", (msg) => {
+    config.remoteaddress = remoteAddress;
+    io.emit("config", config);
   });
 
-  socket.on('copy source', (msg) => {
-	fs.copyFileSync(msg, targetFile);
-	console.log('Manually copied ' + msg);
+  socket.on("getreference", (msg) => {
+    getReferenceFile(path.join(exepath, "reference.jpg"));
   });
 
-  socket.on('sort', (msg) => {
-	var path = require('path');
-	switch (msg) {
-		case "keep" :
-			console.log("sort action: " + msg);
-			break;
-		case "discard" :
-			console.log("sort action: " + msg);
-			msg = "trash"; // for folder name
-			break;
-		case "star" :
-			console.log("sort action: " + msg);
-			msg = "starred"; // for folder name
-			break;
-		default :
-	}
-
-	if (!(fs.existsSync(path.join(targetFolder, msg)))) {
-		fs.mkdirSync(path.join(targetFolder, msg));
-	}
-
-	if (!(autoCopy)) { 
-		// COPY source
-		fs.copyFileSync(sourceFile, path.join(targetFolder, msg, filename)) 
-	}	else {
-		// MOVE copy
-		fs.renameSync(targetFile, path.join(targetFolder, msg, filename))
-	}
-
-
+  socket.on("getexepath", (msg) => {
+    io.emit("exepath", exepath);
   });
 
+  socket.on("settargetfolder", (msg) => {
+    targetFolder = msg;
+  });
+
+  socket.on("setsourcefolder", (msg) => {
+    watcher.unwatch(sourceFolder);
+    sourceFolder = msg;
+    watcher.add(sourceFolder);
+  });
+
+  socket.on("delete target", (msg) => {
+    fs.unlink(targetFile, (err) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log("deleted file: " + targetFile);
+    });
+  });
+
+  socket.on("delete camera", (msg) => {
+    fs.unlink(sourceFile, (err) => {
+      if (err) {
+        console.error(err);
+        return;
+      }
+      console.log("deleted file: " + sourceFile);
+    });
+  });
+
+  socket.on("copy source", (msg) => {
+    fs.copyFileSync(msg, targetFile);
+    console.log("Manually copied " + msg);
+  });
+
+  socket.on("sort", (msg) => {
+    var path = require("path");
+    switch (msg) {
+      case "keep":
+        console.log("sort action: " + msg);
+        break;
+      case "discard":
+        console.log("sort action: " + msg);
+        msg = "trash"; // for folder name
+        break;
+      case "star":
+        console.log("sort action: " + msg);
+        msg = "starred"; // for folder name
+        break;
+      default:
+    }
+
+    if (!fs.existsSync(path.join(targetFolder, msg))) {
+      fs.mkdirSync(path.join(targetFolder, msg));
+    }
+
+    if (!autoCopy) {
+      // COPY source
+      fs.copyFileSync(sourceFile, path.join(targetFolder, msg, filename));
+    } else {
+      // MOVE copy
+      fs.renameSync(targetFile, path.join(targetFolder, msg, filename));
+    }
+  });
 });
-
 
 /*chokidar.watch('.\\original').on('all', (event, path) => {
   console.log(event, path);
@@ -267,84 +267,93 @@ var watcher = chokidar.watch(sourceFolder, {
   ignored: /[\/\\]\./,
   persistent: true,
   ignoreInitial: true,
-  awaitWriteFinish: true
-});    
+  awaitWriteFinish: true,
+});
 
-console.log("Watching " + sourceFolder + " for ." + extension + " files" );
-console.log("autocopy: " + autoCopy );
+console.log("Watching " + sourceFolder + " for ." + extension + " files");
+console.log("autocopy: " + autoCopy);
 
 var sourceFile, targetFile, filename;
 
 watcher
-	  .on('change',  function(path) { console.log(" ~ File " + path + " has been changed"); })
-	  .on('add',  function(path) { console.log(" + File " + path + " has been added"); io.emit("ping","new"); processFile(path); })
-	  .on('unlink',  function(path) { console.log(" - File " + path + " has been deleted"); });
-	  // add, change, unlink, addDir, unlinkDir
-
+  .on("change", function (path) {
+    console.log(" ~ File " + path + " has been changed");
+  })
+  .on("add", function (path) {
+    console.log(" + File " + path + " has been added");
+    io.emit("ping", "new");
+    processFile(path);
+  })
+  .on("unlink", function (path) {
+    console.log(" - File " + path + " has been deleted");
+  });
+// add, change, unlink, addDir, unlinkDir
 
 function processFile(path) {
+  sourceFile = path;
 
-	sourceFile = path;
+  if (getExtension(path).toLowerCase() == extension) {
+    if (!targetFolder.endsWith("\\")) {
+      targetfolder = targetFolder + "\\";
+    }
+    var p = require("path");
+    filename = p.parse(path).base;
+    var target = targetFolder + filename;
+    targetFile = target;
 
-	if (getExtension(path).toLowerCase() == extension) {
-
-
-	if (!(targetFolder.endsWith("\\"))) { targetfolder = targetFolder + "\\"}
-	var p = require('path');
-	filename = p.parse(path).base;
-	var target = targetFolder + filename;
-	targetFile = target;
-
-	// File destination.txt will be created or overwritten by default.
-	/*fs.copyFile(path, target, (err) => {
+    // File destination.txt will be created or overwritten by default.
+    /*fs.copyFile(path, target, (err) => {
 	  if (err) throw err;
 	  console.log(path + ' was copied to destination');
 	});*/
-	
-	var imageAsBase64
-	
-	if (autoCopy) {
-		fs.copyFileSync(path, target);
-	} else {
-		target = path;
-	}
 
-	var sourceType = "jpeg";
-	imageAsBase64 = "data:image/" + sourceType + ";base64," + fs.readFileSync(target, 'base64');
-	// console.log(imageAsBase64);
-	io.emit('new photo', imageAsBase64);
+    var imageAsBase64;
 
-	var exif = {};
-	exif.filename = filename;
-	exif.source = sourceFile;
-	exif.target = targetFile;
-	exif.autocopy = autoCopy;
+    if (autoCopy) {
+      fs.copyFileSync(path, target);
+    } else {
+      target = path;
+    }
 
-	try {
-		const tags = ExifReader.load(fs.readFileSync(target));
-		// console.log(tags['DateTimeOriginal'].description);
-		exif.SS = (tags['ExposureTime'].description);
-		exif.F = (tags['FNumber'].description);
-		exif.ISO = (tags['ISOSpeedRatings'].description);
-		exif.EV = (tags['ExposureBiasValue'].description);
-		exif.mode = (getMode(tags['ExposureProgram'].value));
-		exif.flash = (flashFired(tags['Flash'].description));
-		exif.WB = ((tags['WhiteBalance'].description.toString().split(' ')[0]));
-		io.emit('new data', exif);
-	} catch (error) {
-		console.log('No exif data'); // error.message
-			exif.SS = "";
-			exif.F = "";
-			exif.ISO = "";
-			exif.EV = "";
-			exif.flash = "";
-			exif.mode = "";
-			exif.WB = "";
-			io.emit('new data', exif);
-	}
+    var sourceType = "jpeg";
+    imageAsBase64 =
+      "data:image/" +
+      sourceType +
+      ";base64," +
+      fs.readFileSync(target, "base64");
+    // console.log(imageAsBase64);
+    io.emit("new photo", imageAsBase64);
 
+    var exif = {};
+    exif.filename = filename;
+    exif.source = sourceFile;
+    exif.target = targetFile;
+    exif.autocopy = autoCopy;
 
-	/* exec("notepad.exe " + target, 1, (error, stdout, stderr) => {
+    try {
+      const tags = ExifReader.load(fs.readFileSync(target));
+      // console.log(tags['DateTimeOriginal'].description);
+      exif.SS = tags["ExposureTime"].description;
+      exif.F = tags["FNumber"].description;
+      exif.ISO = tags["ISOSpeedRatings"].description;
+      exif.EV = tags["ExposureBiasValue"].description;
+      exif.mode = getMode(tags["ExposureProgram"].value);
+      exif.flash = flashFired(tags["Flash"].description);
+      exif.WB = tags["WhiteBalance"].description.toString().split(" ")[0];
+      io.emit("new data", exif);
+    } catch (error) {
+      console.log("No exif data"); // error.message
+      exif.SS = "";
+      exif.F = "";
+      exif.ISO = "";
+      exif.EV = "";
+      exif.flash = "";
+      exif.mode = "";
+      exif.WB = "";
+      io.emit("new data", exif);
+    }
+
+    /* exec("notepad.exe " + target, 1, (error, stdout, stderr) => {
 		if (error) {
 			console.log(`error: ${error.message}`);
 			return;
@@ -355,39 +364,37 @@ function processFile(path) {
 		}
 		console.log(`stdout: ${stdout}`); 
 	}); */
-
-}
+  }
 }
 
 function getMode(exifValue) {
-
-	/* 1 = Manual
+  /* 1 = Manual
 	2 = Program AE
 	3 = Aperture-priority AE
 	4 = Shutter speed priority AE */
-	switch (exifValue) {
-		case 1 :
-			mode = "M";
-			break;
-		case 2 :
-			mode = "iA";
-			break;
-		case 3 :
-			mode = "A";
-			break;
-		case 4 :
-			mode = "S";
-			break;
-		default :
-			mode = exifValue;
-	}
-	return mode;
+  switch (exifValue) {
+    case 1:
+      mode = "M";
+      break;
+    case 2:
+      mode = "iA";
+      break;
+    case 3:
+      mode = "A";
+      break;
+    case 4:
+      mode = "S";
+      break;
+    default:
+      mode = exifValue;
+  }
+  return mode;
 }
 
 function flashFired(exifValue) {
-	answer = exifValue.toString().split(',')[0];
-	return answer;
-	/*
+  answer = exifValue.toString().split(",")[0];
+  return answer;
+  /*
 	//check if the number is even
 	if(exifValue % 2 == 0) {
 		return("did not fire");
@@ -397,81 +404,91 @@ function flashFired(exifValue) {
 	else {
 		return("fired");
 	} */
-}	
-
-
-function fra_to_dec(value){
-	num = value;
-	var test=(String(num).split('.')[1] || []).length;
-	var num=(num*(10**Number(test)))
-	var den=(10**Number(test))
-	function reduce(numerator,denominator){
-		var gcd = function gcd(a,b) {
-			return b ? gcd(b, a%b) : a;
-		};
-		gcd = gcd(numerator,denominator);
-		return [numerator/gcd, denominator/gcd];
-	}
-	if (reduce(num,den)[0] == "1") {
-		return (reduce(num,den)[0]+"/"+reduce(num,den)[1])
-	} else {
-		return(Math.round(value * 1000) / 1000)
-	}
-
 }
 
+function fra_to_dec(value) {
+  num = value;
+  var test = (String(num).split(".")[1] || []).length;
+  var num = num * 10 ** Number(test);
+  var den = 10 ** Number(test);
+  function reduce(numerator, denominator) {
+    var gcd = function gcd(a, b) {
+      return b ? gcd(b, a % b) : a;
+    };
+    gcd = gcd(numerator, denominator);
+    return [numerator / gcd, denominator / gcd];
+  }
+  if (reduce(num, den)[0] == "1") {
+    return reduce(num, den)[0] + "/" + reduce(num, den)[1];
+  } else {
+    return Math.round(value * 1000) / 1000;
+  }
+}
 
 // https://stackoverflow.com/questions/190852/how-can-i-get-file-extensions-with-javascript
 function getExtension(path) {
-	var basename = path.split(/[\\/]/).pop(),  // extract file name from full path ...
-				                               // (supports `\\` and `/` separators)
-		pos = basename.lastIndexOf(".");       // get last position of `.`
+  var basename = path.split(/[\\/]/).pop(), // extract file name from full path ...
+    // (supports `\\` and `/` separators)
+    pos = basename.lastIndexOf("."); // get last position of `.`
 
-	if (basename === "" || pos < 1)            // if file name is empty or ...
-		return "";                             //  `.` not found (-1) or comes first (0)
+  if (basename === "" || pos < 1)
+    // if file name is empty or ...
+    return ""; //  `.` not found (-1) or comes first (0)
 
-	return basename.slice(pos + 1);            // extract extension ignoring `.`
+  return basename.slice(pos + 1); // extract extension ignoring `.`
 }
 
 var folderMissing = false;
 var checkInterval = 10000;
 
-
 // check if watched folder is still available
-setInterval(function(){ 
-	if (!(fs.existsSync(sourceFolder))) {
-		if (!(folderMissing)) { console.log('Source location is not accesible!'); }
-		io.emit('missing sourcefolder',"");
-		watcher.unwatch(sourceFolder);
-		folderMissing = true;
-		checkInterval = 5000;
-	} else {
-		if (folderMissing) {
-			watcher.add(sourceFolder);
-			folderMissing = false;
-			console.log('Source location is available!');
-			io.emit('folder is back',"");
-			checkInterval = 10000;
-		}	
-	}
-},checkInterval) 
+setInterval(function () {
+  if (!fs.existsSync(sourceFolder)) {
+    if (!folderMissing) {
+      console.log("Source location is not accesible!");
+    }
+    io.emit("missing sourcefolder", "");
+    watcher.unwatch(sourceFolder);
+    folderMissing = true;
+    checkInterval = 5000;
+  } else {
+    if (folderMissing) {
+      watcher.add(sourceFolder);
+      folderMissing = false;
+      console.log("Source location is available!");
+      io.emit("folder is back", "");
+      checkInterval = 10000;
+    }
+  }
+}, checkInterval);
 
 function isElectron() {
-    // Renderer process
-    if (typeof window !== 'undefined' && typeof window.process === 'object' && window.process.type === 'renderer') {
-        return true;
-    }
+  // Renderer process
+  if (
+    typeof window !== "undefined" &&
+    typeof window.process === "object" &&
+    window.process.type === "renderer"
+  ) {
+    return true;
+  }
 
-    // Main process
-    if (typeof process !== 'undefined' && typeof process.versions === 'object' && !!process.versions.electron) {
-        return true;
-    }
+  // Main process
+  if (
+    typeof process !== "undefined" &&
+    typeof process.versions === "object" &&
+    !!process.versions.electron
+  ) {
+    return true;
+  }
 
-    // Detect the user agent when the `nodeIntegration` option is set to true
-    if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
-        return true;
-    }
+  // Detect the user agent when the `nodeIntegration` option is set to true
+  if (
+    typeof navigator === "object" &&
+    typeof navigator.userAgent === "string" &&
+    navigator.userAgent.indexOf("Electron") >= 0
+  ) {
+    return true;
+  }
 
-    return false;
+  return false;
 }
-
