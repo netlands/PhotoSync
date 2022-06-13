@@ -58,6 +58,8 @@
       var previousReference = true;
       var exepath;
 
+      var mirrorCrosshair = false;
+
       const colorThief = new ColorThief();
 
       socket.on("disconnect", function () {
@@ -374,6 +376,35 @@
           cH.css("top", e.pageY);
           cV.css("left", e.pageX);
 
+          var cHm = $("#crosshair-hm"),
+            cVm = $("#crosshair-vm");
+          if (mirrorCrosshair || e.altKey) {
+            width = document.getElementById("container").offsetWidth;
+            height = document.getElementById("container").offsetHeight;
+            var mirrorX = 0;
+            var mirrorY = 0;
+            if (e.pageX < width) {
+              mirrorX = width - e.pageX;
+            } else {
+              mirrorX = width - (width - e.pageX);
+            }
+            if (e.pageY < height) {
+              mirrorY = height - e.pageY;
+            } else {
+              mirrorY = height - (width - e.pageY);
+            }
+            if (mirrorX > width / 2 - 2 && mirrorX < width / 2 + 2) {
+              mirrorX = 0;
+            }
+            if (mirrorY > height / 2 - 2 && mirrorY < height / 2 + 2) {
+              mirrorY = 0;
+            }
+            cHm.css("top", mirrorY);
+            cVm.css("left", mirrorX);
+          } else if (!e.altKey) {
+            cHm.css("top", 0);
+            cVm.css("left", 0);
+          }
           /* $('#file-info').css({
             top: e.pageY + 'px',
             left: e.pageX + 'px'
@@ -435,10 +466,10 @@
         canvas.addEventListener("click", function (event) {
           const shift = event.getModifierState("Shift");
           const ctrl = event.getModifierState("Control");
-          //const alt = event.getModifierState("Alt");
+          const alt = event.getModifierState("Alt");
           if (ctrl && shift) {
             context.clearRect(0, 0, canvas.width, canvas.height);
-          } else if (ctrl && !shift) {
+          } else if ((ctrl && !shift)|| (ctrl && alt && !shift)) {
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
             var x = event.pageX - canvas.offsetLeft;
@@ -672,6 +703,16 @@
       }
 
       #crosshair-v {
+        z-index: 100;
+        height: 100%;
+      }
+
+      #crosshair-hm {
+        z-index: 100;
+        width: 100%;
+      }
+
+      #crosshair-vm {
         z-index: 100;
         height: 100%;
       }
@@ -1124,6 +1165,10 @@
     </div>
     <div id="crosshair-h" class="hair"></div>
     <div id="crosshair-v" class="hair"></div>
+
+    <div id="crosshair-hm" class="hair"></div>
+    <div id="crosshair-vm" class="hair"></div>
+
     <div
       id="container"
       ondrop="dropHandler(event);"
@@ -1221,10 +1266,7 @@
 
         /* The Close Button */
         .close {
-          color: #aaaaaa;
           float: right;
-          font-size: 30px;
-          font-weight: bold;
         }
 
         .close:hover,
@@ -1253,7 +1295,7 @@
           display: inline-flex;
           vertical-align: top;
           margin-right: 10px;
-          font-size: 20px;
+          font-size: 24px;
         }
 
         kbd {
@@ -1293,7 +1335,15 @@
       </script>
       <!-- Modal content -->
       <div class="modal-content">
-        <span onclick="closeHelp()" class="close" id="close">&times;</span>
+        <span class="close" id="close">
+          <button
+            class="mdl-button mdl-js-button mdl-button--icon"
+            onclick="closeHelp()"
+          >
+            <i class="material-icons">close</i>
+          </button></span
+        >
+
         <h3>How to use</h3>
         <p>
           When used in combination with the Node server app, new photos will be
@@ -1378,44 +1428,107 @@
         <span onclick="closeSettings()" class="close" id="close">&times;</span>
         <h3>Settings</h3>
         <form action="/updatesettings">
-          <label for="srcFldr">Folder to watch (camera):</label><br />
-          <input type="text" id="srcFldr" name="source" value="xxx" /><br />
-
-          <label for="tgtFldr">Target folder (PC):</label><br />
-          <input type="text" id="tgtFldr" name="target" value="yyy" /><br />
-
-          <label for="extension">File extension to watch:</label><br />
-          <input
-            type="text"
-            id="extension"
-            name="extension"
-            value="jpg"
-          /><br />
-
-          <label for="autoCopy">Automatically copy new files</label><br />
-          <input
-            type="checkbox"
-            id="autoCopy"
-            name="autocopy"
-            value="autocopy"
-          />
-
-          <label for="playAudio">Play audio cues</label><br />
-          <input
-            type="checkbox"
-            id="playAudio"
-            name="playaudio"
-            value="playaudio"
-          />
+          <div
+            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+          >
+            <input
+              class="mdl-textfield__input"
+              type="text"
+              id="srcFolderField"
+              pattern='^(?:[a-z]:)?[\/\\]{0,2}(?:[.\/\\ ](?![.\/\\\n])|[^<>:"|?*.\/\\ \n])+$'
+              value="z:\temp"
+            />
+            <label class="mdl-textfield__label" for="srcFolderField"
+              >Folder to watch</label
+            >
+            <span class="mdl-textfield__error"
+              >Enter a valid folder location</span
+            >
+          </div>
+          <div
+            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+          >
+            <input
+              class="mdl-textfield__input"
+              type="text"
+              id="extField"
+              pattern="^(jpg|jpeg|png|svg)$"
+              value="jpg"
+            />
+            <label class="mdl-textfield__label" for="extField"
+              >File extension</label
+            >
+            <span class="mdl-textfield__error">Enter a valid extension</span>
+          </div>
+          <br />
+          <div
+            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+          >
+            <input
+              class="mdl-textfield__input"
+              type="text"
+              id="srcFolderField"
+              pattern='^(?:[a-z]:)?[\/\\]{0,2}(?:[.\/\\ ](?![.\/\\\n])|[^<>:"|?*.\/\\ \n])+$'
+              value="z:\temp"
+            />
+            <label class="mdl-textfield__label" for="srcFolderField"
+              >Target folder</label
+            >
+            <span class="mdl-textfield__error"
+              >Enter a valid folder location</span
+            >
+          </div>
+          <div
+            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+          >
+            <input
+              class="mdl-textfield__input"
+              type="text"
+              id="sessionField"
+              pattern="^([a-zA-Z ])+$"
+              value=""
+            />
+            <label class="mdl-textfield__label" for="sessionField"
+              >Session (folder) name (optional)</label
+            >
+            <span class="mdl-textfield__error">Enter a valid name</span>
+          </div>
+          <br />
 
           <br />
-          <input type="submit" value="Update" />
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="autoCopyCheck"
+          >
+            <input
+              type="checkbox"
+              id="autoCopyCheck"
+              class="mdl-checkbox__input"
+              checked
+            />
+            <span class="mdl-checkbox__label">Auto copy files</span>
+          </label>
+          <br />
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="playAudioCheck"
+          >
+            <input
+              type="checkbox"
+              id="playAudioCheck"
+              class="mdl-checkbox__input"
+              checked
+            />
+            <span class="mdl-checkbox__label">Play audio cues</span>
+          </label>
+          <br />
+          <br />
+          <button class="mdl-button mdl-js-button mdl-button--raised">
+            Use
+          </button>
         </form>
-
-        <p>
-          If you click the "Submit" button, the form-data will be sent to a page
-          called "/action_page.php".
-        </p>
+        <br />
+        <p>If you click the "Use" button, your settings will be stored.</p>
       </div>
     </div>
     <span class="debug"></span>
