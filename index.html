@@ -14,7 +14,7 @@
     <script src="https://cdn.jsdelivr.net/gh/cotton123236/zoomist@latest/dist/zoomist.min.js"></script>
     <!-- zoom: https://github.com/cotton123236/zoomist -->
     <!-- grid: https://stackoverflow.com/questions/32556463/overlay-grid-on-responsive-image -->
-    <!-- crosshair: https://codepen.io/michaelsboost/pen/DEQzoN -->
+    <!-- crosshairs: https://codepen.io/michaelsboost/pen/DEQzoN -->
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
@@ -58,6 +58,7 @@
       var previousReference = true;
       var exepath;
 
+      var guideColor = "blue";
       var mirrorCrosshair = false;
 
       const colorThief = new ColorThief();
@@ -360,6 +361,9 @@
         }
       });
 
+      var mirrorX = 0;
+      var mirrorY = 0;
+
       $(document).ready(function () {
         console.log("DOM ready");
 
@@ -378,11 +382,11 @@
 
           var cHm = $("#crosshair-hm"),
             cVm = $("#crosshair-vm");
+
           if (mirrorCrosshair || e.altKey) {
             width = document.getElementById("container").offsetWidth;
             height = document.getElementById("container").offsetHeight;
-            var mirrorX = 0;
-            var mirrorY = 0;
+
             if (e.pageX < width) {
               mirrorX = width - e.pageX;
             } else {
@@ -461,28 +465,48 @@
 
         var canvas = document.getElementById("guides");
         var context = canvas.getContext("2d");
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        let guideCount = 0;
 
         // http://jsfiddle.net/PgKEt/2/
         canvas.addEventListener("click", function (event) {
           const shift = event.getModifierState("Shift");
           const ctrl = event.getModifierState("Control");
-          const alt = event.getModifierState("Alt");
+          // const alt = event.getModifierState("Alt");
+          console.log(guideCount);
           if (ctrl && shift) {
             context.clearRect(0, 0, canvas.width, canvas.height);
-          } else if ((ctrl && !shift)|| (ctrl && alt && !shift)) {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
+            guideCount = 0;
+          } else if (ctrl && !shift) {
             var x = event.pageX - canvas.offsetLeft;
             var y = event.pageY - canvas.offsetTop;
-            context.clearRect(0, 0, canvas.width, canvas.height);
+            if (guideCount == 0 || guideCount > 1) {
+              context.clearRect(0, 0, canvas.width, canvas.height);
+              canvas.width = canvas.offsetWidth;
+              canvas.height = canvas.offsetHeight;
+              guideCount = 0;
+            }
+            guideCount++;
+            console.log(guideCount);
             context.beginPath();
             context.moveTo(0, y - 4); // offset crosshair
             context.lineTo(3000, y);
             context.moveTo(x - 2, 0); // offset crosshair
             context.lineTo(x, 3000);
-            context.strokeStyle = "blue";
+            context.strokeStyle = guideColor;
             context.stroke();
             context.closePath();
+            if (mirrorCrosshair) {
+              context.beginPath();
+              context.moveTo(0, mirrorY - 4); // offset crosshair
+              context.lineTo(3000, mirrorY);
+              context.moveTo(mirrorX - 2, 0); // offset crosshair
+              context.lineTo(mirrorX, 3000);
+              context.strokeStyle = guideColor;
+              context.stroke();
+              context.closePath();
+            }
           }
         });
       });
@@ -512,10 +536,14 @@
           "dark"
         ) {
           console.log("dark");
+          $("body").addClass("dark");
+          $("body").removeClass("light");
           $(".hair").addClass("light");
           $("#image").removeClass("dark");
         } else {
           console.log("light");
+          $("body").addClass("light");
+          $("body").removeClass("dark");
           $(".hair").removeClass("light");
           $("#image").addClass("dark");
         }
@@ -975,6 +1003,11 @@
         display: none;
       }
 
+      #context-menu .item.inactive {
+        cursor: default;
+        color: #aaa;
+      }
+
       .show-menu-item {
         display: block;
       }
@@ -1017,17 +1050,8 @@
         z-index: 99;
       }
 
-      .close-button .material-icons {
-        font-size: 30px;
-        color: #aaa;
-        display: inline-block;
-        border: 0px solid white;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.8);
-        width: 34px;
-        height: 34px;
-        text-align: center;
-        line-height: 34px;
+      body.dark .close-button i.material-icons {
+        color: rgb(255, 255, 255);
       }
 
       .zoomist-slider {
@@ -1059,7 +1083,11 @@
 
   <body>
     <div id="context-menu">
-      <div class="item" title="Open Settings" onclick="showSettings();">
+      <div
+        class="item inactive"
+        title="Open Settings"
+        onclick="showSettings();"
+      >
         <span class="material-icons">settings</span> Settings
       </div>
       <div class="item copy-file" onclick="copyFile();">
@@ -1090,8 +1118,11 @@
         on/off
       </div>
       <div class="item" onclick="toggleCrosshair();">
-        <span id="grid_crosshair" class="material-icons">add</span> Crosshair
+        <span id="grid_crosshair" class="material-icons">add</span> Crosshairs
         on/off
+      </div>
+      <div class="item" onclick="toggleMirror();">
+        <span class="material-icons">tag</span> Mirror Crosshairs
       </div>
       <div class="item" onclick="toggleZoom();">
         <span id="zoom_toggle" class="material-icons">zoom_in</span> Zoom View
@@ -1264,6 +1295,12 @@
           font-family: Calibri, sans-serif;
         }
 
+        #help.modal p,
+        #help.modal li {
+          font-size: 18px;
+          font-family: Calibri, sans-serif;
+        }
+
         /* The Close Button */
         .close {
           float: right;
@@ -1287,7 +1324,7 @@
         }
 
         .modal-content ul.l2 li {
-          margin-left: 34px;
+          margin-left: 38px;
           padding-bottom: 0px;
         }
 
@@ -1382,8 +1419,8 @@
             <span class="material-icons">grid_on</span> Turn the grid on or off.
           </li>
           <li>
-            <span class="material-icons">add</span> Turn the crosshair on or
-            off.
+            <span class="material-icons">add</span> Turn the crosshairs on or
+            off. Optionally you can also mirror the crosshairs.
           </li>
           <li>
             <span class="material-icons">zoom_in</span> Switch to Zoom view. You
@@ -1425,7 +1462,14 @@
     </div>
     <div id="settings" class="modal">
       <div class="modal-content">
-        <span onclick="closeSettings()" class="close" id="close">&times;</span>
+        <span class="close" id="close">
+          <button
+            class="mdl-button mdl-js-button mdl-button--icon"
+            onclick="closeSettings()"
+          >
+            <i class="material-icons">close</i>
+          </button></span
+        >
         <h3>Settings</h3>
         <form action="/updatesettings">
           <div
@@ -1766,7 +1810,7 @@
         showCompare = true;
 
         $("#compare").append(
-          '<div onclick="toggleCompare()" class="close-button"><span class="material-icons">close</span></div>'
+          '<button class="mdl-button mdl-js-button mdl-button--icon close-button" onclick="toggleCompare()"><i class="material-icons">close</i></button>'
         );
       }
 
@@ -1812,7 +1856,7 @@
         zoomActive = true;
 
         $("#zoom").append(
-          '<div onclick="closeZoom()" class="close-button"><span class="material-icons">close</span></div>'
+          '<button class="mdl-button mdl-js-button mdl-button--icon close-button" onclick="closeZoom()"><i class="material-icons">close</i></button>'
         );
       }
 
@@ -1840,6 +1884,14 @@
         } else {
           $(".hair").removeClass("hide");
           showCrosshair = true;
+        }
+      }
+
+      function toggleMirror() {
+        if (mirrorCrosshair) {
+          mirrorCrosshair = false;
+        } else {
+          mirrorCrosshair = true;
         }
       }
 
