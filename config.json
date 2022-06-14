@@ -6,6 +6,9 @@
   "settings": {
     "autocopy": true,
     "showgrid": true,
+    "showcrosshairs": true,
+    "mirrorcrosshairs": false,
+    "guidecolor": "blue",
     "quicksort": false,
     "previousreference": true,
     "playaudio": true,

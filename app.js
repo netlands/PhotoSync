@@ -59,6 +59,9 @@ function readConfig(configFile) {
   extension = config.extension;
   autoCopy = config.settings.autocopy;
   showGrid = config.settings.showgrid;
+  showCrosshairs = config.settings.showcrosshairs;
+  mirrorCrosshairs = config.settings.mirrorcrosshairs;
+  guideColor = config.settings.guidecolor;
   quickSort = config.settings.quicksort;
 
   playAudio = config.settings.playaudio;
@@ -124,7 +127,7 @@ app.use(function (req, res, next) {
     "Content-Security-Policy",
     "script-src 'self' 'unsafe-inline' http://localhost:" +
       serverPort +
-      " https://ajax.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdnjs.com https://code.jquery.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; style-src * 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:;"
+      " https://ajax.googleapis.com https://code.getmdl.io https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdnjs.com https://code.jquery.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; style-src * 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:;"
   );
   return next();
 });
@@ -197,6 +200,17 @@ io.on("connection", (socket) => {
     watcher.unwatch(sourceFolder);
     sourceFolder = msg;
     watcher.add(sourceFolder);
+  });
+
+  socket.on("setconfig", (msg) => {
+    //console.log(msg);
+    targetFolder = msg.target;
+    extension = msg.extension;
+    autoCopy = msg.autocopy;
+    watcher.unwatch(sourceFolder);
+    sourceFolder = msg.source;
+    watcher.add(sourceFolder);
+    console.log("Now watching " + sourceFolder)
   });
 
   socket.on("delete target", (msg) => {

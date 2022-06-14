@@ -52,14 +52,14 @@
       var showgrid = true;
       var showCompare = false;
       var zoomActive = false;
-      var showCrosshair = true;
+      var showCrosshairs = true;
       var showFileinfo = true;
       var hideGridOnMouseOver = true;
       var previousReference = true;
       var exepath;
 
       var guideColor = "blue";
-      var mirrorCrosshair = false;
+      var mirrorCrosshairs = false;
 
       const colorThief = new ColorThief();
 
@@ -278,7 +278,7 @@
 
       var targetfolder,
         sourcefolder,
-        extenstion,
+        extension,
         autocopy,
         quicksort,
         showgrid,
@@ -299,9 +299,12 @@
         );
         $("#file-info").removeClass("ng");
         $("#file-info").addClass("ok");
-        extenstion = config.extension;
+        extension = config.extension;
         autocopy = config.settings.autocopy;
         showgrid = config.settings.showgrid;
+        showCrosshairs = config.settings.showcrosshairs;
+        mirrorCrosshairs = config.settings.mirrorcrosshairs;
+        guideColor = config.settings.guideColor;
         quicksort = config.settings.quicksort;
         playAudio = config.settings.playaudio;
         checkSettings = config.settings.checksettings;
@@ -383,7 +386,7 @@
           var cHm = $("#crosshair-hm"),
             cVm = $("#crosshair-vm");
 
-          if (mirrorCrosshair || e.altKey) {
+          if (mirrorCrosshairs || e.altKey) {
             width = document.getElementById("container").offsetWidth;
             height = document.getElementById("container").offsetHeight;
 
@@ -428,7 +431,7 @@
         });
 
         $("#container").mouseenter(function () {
-          if (showCrosshair) {
+          if (showCrosshairs) {
             $(".hair").show();
             if (hideGridOnMouseOver && showgrid) {
               $("#image").removeClass("grid");
@@ -497,7 +500,7 @@
             context.strokeStyle = guideColor;
             context.stroke();
             context.closePath();
-            if (mirrorCrosshair) {
+            if (mirrorCrosshairs) {
               context.beginPath();
               context.moveTo(0, mirrorY - 4); // offset crosshair
               context.lineTo(3000, mirrorY);
@@ -1025,7 +1028,7 @@
       }
 
       .item#exif .material-icons {
-        vertical-align:text-top;
+        vertical-align: text-top;
         margin-right: 2px;
         font-size: 22px;
       }
@@ -1085,11 +1088,7 @@
 
   <body>
     <div id="context-menu">
-      <div
-        class="item inactive"
-        title="Open Settings"
-        onclick="showSettings();"
-      >
+      <div class="item" title="Open Settings" onclick="showSettings();">
         <span class="material-icons">settings</span> Settings
       </div>
       <div class="item copy-file" onclick="copyFile();">
@@ -1180,7 +1179,10 @@
         <div>
           <div id="camera_mode"></div>
           &nbsp;<span class="material-icons">camera</span><span id="F"></span>
-          <!--span class="material-icons">shutter_speed</span--><span class="material-icons">schedule</span>
+          <!--span class="material-icons">shutter_speed</span--><span
+            class="material-icons"
+            >schedule</span
+          >
           <span id="SS"></span>
         </div>
         <div>
@@ -1337,6 +1339,9 @@
           font-size: 24px;
         }
 
+        .modal-content span.close {
+          margin-right: -20px;
+        }
         kbd {
           background-color: #eee;
           border-radius: 3px;
@@ -1351,6 +1356,10 @@
           padding: 2px 4px;
           white-space: nowrap;
         }
+
+        .mdl-textfield {
+          width: 100%;
+        }
       </style>
       <script>
         // Get the modal
@@ -1364,7 +1373,103 @@
           modal.style.display = "none";
         }
 
+        function sendConfig() {
+
+          const config = new Object();
+          config.target = targetfolder;
+          config.source = sourcefolder;
+          config.extension = extension;
+          const settings = new Object()
+          settings.autocopy = autocopy;
+          config.settings = settings;
+          config.settings.showgrid = showgrid;
+          config.settings.showcrosshairs = showCrosshairs;
+          config.settings.mirrorcrosshairs = mirrorCrosshairs;
+          config.settings.guideColor = guideColor;
+          config.settings.quicksort = quicksort;
+          config.settings.playaudio = playAudio;
+          config.settings.checksettings = checkSettings;
+          config.defaults = cameraDefault;
+          config.settings.previousreference = previousReference;
+          
+          closeSettings();
+          socket.emit("setconfig", config);
+          // socket.emit("getconfig", "hi there!");
+
+        }
+
         function showSettings() {
+          document.getElementById("srcFolderField").value = sourcefolder;
+          document
+            .getElementById("srcFolderField")
+            .parentElement.classList.add("is-dirty");
+          document.getElementById("extField").value = extension;
+          document
+            .getElementById("extField")
+            .parentElement.classList.add("is-dirty");
+          document.getElementById("tgtFolderField").value = targetfolder;
+          document
+            .getElementById("tgtFolderField")
+            .parentElement.classList.add("is-dirty");
+          /* document.getElementById("sessionField").value = "NOT IMPLEMENTED";
+          document
+            .getElementById("sessionField")
+            .parentElement.classList.add("is-dirty");*/
+          if (autocopy) {
+            document
+              .getElementById("autoCopyCheck")
+              .parentElement.classList.add("is-checked");
+          }
+          if (playAudio) {
+            document
+              .getElementById("playAudioCheck")
+              .parentElement.classList.add("is-checked");
+          }
+          if (showgrid) {
+            document
+              .getElementById("showGridCheck")
+              .parentElement.classList.add("is-checked");
+          }
+          if (showCrosshairs) {
+            document
+              .getElementById("showCrosshairsCheck")
+              .parentElement.classList.add("is-checked");
+          }
+          if (mirrorCrosshairs) {
+            document
+              .getElementById("mirrorCrosshairsCheck")
+              .parentElement.classList.add("is-checked");
+          }
+          if (quicksort) {
+            document
+              .getElementById("showQuicksortCheck")
+              .parentElement.classList.add("is-checked");
+          }
+          if (showFileinfo) {
+            document
+              .getElementById("showInfoCheck")
+              .parentElement.classList.add("is-checked");
+          }
+          if (checkSettings) {
+            document
+              .getElementById("checkSettingsCheck")
+              .parentElement.classList.add("is-checked");
+          }
+          document.getElementById("autoCopyCheck").checked = autocopy;
+          document.getElementById("playAudioCheck").checked = playAudio;
+          document.getElementById("showGridCheck").checked = showgrid;
+          document.getElementById("showCrosshairsCheck").checked =
+            showCrosshairs;
+          document.getElementById("mirrorCrosshairsCheck").checked =
+            mirrorCrosshairs;
+          document.getElementById("showQuicksortCheck").checked = quicksort;
+          document.getElementById("showInfoCheck").checked = showFileinfo;
+          document.getElementById("checkSettingsCheck").checked = checkSettings;
+          /*document.getElementById("settingsField").value = cameraDefault;
+          document
+            .getElementById("settingsField")
+            .parentElement.classList.add("is-dirty");*/
+
           document.getElementById("settings").style.display = "block";
         }
 
@@ -1374,7 +1479,7 @@
       </script>
       <!-- Modal content -->
       <div class="modal-content">
-        <span class="close" id="close">
+        <span class="close">
           <button
             class="mdl-button mdl-js-button mdl-button--icon"
             onclick="closeHelp()"
@@ -1464,7 +1569,7 @@
     </div>
     <div id="settings" class="modal">
       <div class="modal-content">
-        <span class="close" id="close">
+        <span class="close">
           <button
             class="mdl-button mdl-js-button mdl-button--icon"
             onclick="closeSettings()"
@@ -1473,7 +1578,7 @@
           </button></span
         >
         <h3>Settings</h3>
-        <form action="/updatesettings">
+        <div>
           <div
             class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
           >
@@ -1481,8 +1586,10 @@
               class="mdl-textfield__input"
               type="text"
               id="srcFolderField"
-              pattern='^(?:[a-z]:)?[\/\\]{0,2}(?:[.\/\\ ](?![.\/\\\n])|[^<>:"|?*.\/\\ \n])+$'
-              value="z:\temp"
+              pattern='^(?:[a-zA-Z]:)?[\/\\]{0,2}(?:[.\/\\ ](?![.\/\\\n])|[^<>:"|?*.\/\\ \n])+$'
+              value="Z:\DCIM"
+              data-target="sourcefolder"
+              onblur="processInput(event)"
             />
             <label class="mdl-textfield__label" for="srcFolderField"
               >Folder to watch</label
@@ -1491,6 +1598,7 @@
               >Enter a valid folder location</span
             >
           </div>
+          <br />
           <div
             class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
           >
@@ -1500,6 +1608,8 @@
               id="extField"
               pattern="^(jpg|jpeg|png|svg)$"
               value="jpg"
+              data-target="extension"
+              onblur="processInput(event)"
             />
             <label class="mdl-textfield__label" for="extField"
               >File extension</label
@@ -1513,18 +1623,20 @@
             <input
               class="mdl-textfield__input"
               type="text"
-              id="srcFolderField"
-              pattern='^(?:[a-z]:)?[\/\\]{0,2}(?:[.\/\\ ](?![.\/\\\n])|[^<>:"|?*.\/\\ \n])+$'
-              value="z:\temp"
+              id="tgtFolderField"
+              pattern='^(?:[a-zA-Z]:)?[\/\\]{0,2}(?:[.\/\\ ](?![.\/\\\n])|[^<>:"|?*.\/\\ \n])+$'
+              value="d:\work"
+              data-target="targetfolder"
+              onblur="processInput(event)"
             />
-            <label class="mdl-textfield__label" for="srcFolderField"
+            <label class="mdl-textfield__label" for="tgtFolderField"
               >Target folder</label
             >
             <span class="mdl-textfield__error"
               >Enter a valid folder location</span
             >
           </div>
-          <div
+          <!--div
             class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
           >
             <input
@@ -1533,15 +1645,16 @@
               id="sessionField"
               pattern="^([a-zA-Z ])+$"
               value=""
+              data-target="sessionfolder"
+              onblur="processInput(event)"
             />
             <label class="mdl-textfield__label" for="sessionField"
               >Session (folder) name (optional)</label
             >
             <span class="mdl-textfield__error">Enter a valid name</span>
           </div>
-          <br />
+          <br /-->
 
-          <br />
           <label
             class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
             for="autoCopyCheck"
@@ -1550,10 +1663,13 @@
               type="checkbox"
               id="autoCopyCheck"
               class="mdl-checkbox__input"
-              checked
+              data-target="autocopy"
+              onchange="handleChange(event)"
             />
             <span class="mdl-checkbox__label">Auto copy files</span>
           </label>
+          <br />
+          <br />
           <br />
           <label
             class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
@@ -1563,22 +1679,140 @@
               type="checkbox"
               id="playAudioCheck"
               class="mdl-checkbox__input"
-              checked
+              data-target="playAudio"
+              onchange="handleChange(event)"
             />
             <span class="mdl-checkbox__label">Play audio cues</span>
           </label>
+
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="showGridCheck"
+          >
+            <input
+              type="checkbox"
+              id="showGridCheck"
+              class="mdl-checkbox__input"
+              data-target="showgrid"
+              onchange="handleChange(event)"
+            />
+            <span class="mdl-checkbox__label">Show grid</span>
+          </label>
+
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="showCrosshairsCheck"
+          >
+            <input
+              type="checkbox"
+              id="showCrosshairsCheck"
+              class="mdl-checkbox__input"
+              data-target="showCrosshairs"
+              onchange="handleChange(event)"
+            />
+            <span class="mdl-checkbox__label">Show crosshairs</span>
+          </label>
+
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="mirrorCrosshairsCheck"
+          >
+            <input
+              type="checkbox"
+              id="mirrorCrosshairsCheck"
+              class="mdl-checkbox__input"
+              data-target="mirrorCrosshairs"
+              onchange="handleChange(event)"
+            />
+            <span class="mdl-checkbox__label">Mirror crosshairs</span>
+          </label>
+
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="showQuicksortCheck"
+          >
+            <input
+              type="checkbox"
+              id="showQuicksortCheck"
+              class="mdl-checkbox__input"
+              data-target="quicksort"
+              onchange="handleChange(event)"
+            />
+            <span class="mdl-checkbox__label">Show quick sort</span>
+          </label>
+
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="showInfoCheck"
+          >
+            <input
+              type="checkbox"
+              id="showInfoCheck"
+              class="mdl-checkbox__input"
+              data-target="showFileinfo"
+              onchange="handleChange(event)"
+            />
+            <span class="mdl-checkbox__label">Show info</span>
+          </label>
+
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="checkSettingsCheck"
+          >
+            <input
+              type="checkbox"
+              id="checkSettingsCheck"
+              class="mdl-checkbox__input"
+              data-target="checkSettings"
+              onchange="handleChange(event)"
+            />
+            <span class="mdl-checkbox__label">Check camera settings</span>
+          </label>
+
+          <!--div
+            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+          >
+            <input
+              class="mdl-textfield__input"
+              type="text"
+              id="settingsField"
+              value=""
+              data-target="cameraDefault"
+              onblur="processInput(event)"
+            />
+            <label class="mdl-textfield__label" for="settingsField"
+              >Camera settings</label
+            >
+          </div-->
+
           <br />
           <br />
-          <button class="mdl-button mdl-js-button mdl-button--raised">
-            Use
+          <button
+            class="mdl-button mdl-js-button mdl-button--raised"
+            onclick="sendConfig()"
+          >
+            Save settings
           </button>
-        </form>
+        </div>
         <br />
-        <p>If you click the "Use" button, your settings will be stored.</p>
+        <p>
+          You need to click "Save settings" to use updated source and target
+          folders.
+        </p>
       </div>
     </div>
     <span class="debug"></span>
     <script>
+      function handleChange(e) {
+        // console.log(e.target.id + " " + e.target.getAttribute("data-target") + " " + e.target.checked);
+        window[e.target.getAttribute("data-target")] = e.target.checked;
+      }
+
+      function processInput(e) {
+        console.log(e.target.value);
+        window[e.target.getAttribute("data-target")] = e.target.value;
+      }
+
       function createGrid() {
         // https://jsfiddle.net/madstop/bM5Kr/
         width = document.getElementById("container").offsetWidth + 1;
@@ -1880,20 +2114,20 @@
       }
 
       function toggleCrosshair() {
-        if (showCrosshair) {
+        if (showCrosshairs) {
           $(".hair").addClass("hide");
-          showCrosshair = false;
+          showCrosshairs = false;
         } else {
           $(".hair").removeClass("hide");
-          showCrosshair = true;
+          showCrosshairs = true;
         }
       }
 
       function toggleMirror() {
-        if (mirrorCrosshair) {
-          mirrorCrosshair = false;
+        if (mirrorCrosshairs) {
+          mirrorCrosshairs = false;
         } else {
-          mirrorCrosshair = true;
+          mirrorCrosshairs = true;
         }
       }
 
