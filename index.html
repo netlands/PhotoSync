@@ -58,7 +58,7 @@
       var previousReference = true;
       var exepath;
 
-      var guideColor = "blue";
+      var guideColor = "#0000ff";
       var mirrorCrosshairs = false;
 
       const colorThief = new ColorThief();
@@ -304,7 +304,7 @@
         showgrid = config.settings.showgrid;
         showCrosshairs = config.settings.showcrosshairs;
         mirrorCrosshairs = config.settings.mirrorcrosshairs;
-        guideColor = config.settings.guideColor;
+        guideColor = config.settings.guidecolor;
         quicksort = config.settings.quicksort;
         playAudio = config.settings.playaudio;
         checkSettings = config.settings.checksettings;
@@ -477,7 +477,6 @@
           const shift = event.getModifierState("Shift");
           const ctrl = event.getModifierState("Control");
           // const alt = event.getModifierState("Alt");
-          console.log(guideCount);
           if (ctrl && shift) {
             context.clearRect(0, 0, canvas.width, canvas.height);
             guideCount = 0;
@@ -491,7 +490,6 @@
               guideCount = 0;
             }
             guideCount++;
-            console.log(guideCount);
             context.beginPath();
             context.moveTo(0, y - 4); // offset crosshair
             context.lineTo(3000, y);
@@ -1360,6 +1358,24 @@
         .mdl-textfield {
           width: 100%;
         }
+
+        input[type="color"] {
+          opacity: 0;
+          display: block;
+          width: 32px;
+          height: 32px;
+          border: none;
+        }
+        #colorpicker-wrapper {
+          margin-left: 10px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+
+        #colorpicker-label {
+          line-height: 32px;
+          vertical-align: bottom;
+        }
       </style>
       <script>
         // Get the modal
@@ -1374,28 +1390,26 @@
         }
 
         function sendConfig() {
-
           const config = new Object();
           config.target = targetfolder;
           config.source = sourcefolder;
           config.extension = extension;
-          const settings = new Object()
+          const settings = new Object();
           settings.autocopy = autocopy;
           config.settings = settings;
           config.settings.showgrid = showgrid;
           config.settings.showcrosshairs = showCrosshairs;
           config.settings.mirrorcrosshairs = mirrorCrosshairs;
-          config.settings.guideColor = guideColor;
+          config.settings.guidecolor = guideColor;
           config.settings.quicksort = quicksort;
           config.settings.playaudio = playAudio;
           config.settings.checksettings = checkSettings;
           config.defaults = cameraDefault;
           config.settings.previousreference = previousReference;
-          
+
           closeSettings();
           socket.emit("setconfig", config);
           // socket.emit("getconfig", "hi there!");
-
         }
 
         function showSettings() {
@@ -1469,6 +1483,11 @@
           document
             .getElementById("settingsField")
             .parentElement.classList.add("is-dirty");*/
+
+          document.getElementById("colorpicker").value =
+            guideColor.toLowerCase();
+          document.getElementById("colorpicker-wrapper").style.backgroundColor =
+            guideColor;
 
           document.getElementById("settings").style.display = "block";
         }
@@ -1784,6 +1803,16 @@
               >Camera settings</label
             >
           </div-->
+          <br />
+          <br />
+          <label id="colorpicker-label" for="colorpicker">Guide color </label>
+          <span id="colorpicker-wrapper"
+            ><input
+              type="color"
+              id="colorpicker"
+              value="#ff0000"
+              oninput="setGuideColor(this.value)"
+          /></span>
 
           <br />
           <br />
@@ -1791,12 +1820,12 @@
             class="mdl-button mdl-js-button mdl-button--raised"
             onclick="sendConfig()"
           >
-            Save settings
+            Use settings
           </button>
         </div>
         <br />
         <p>
-          You need to click "Save settings" to use updated source and target
+          You need to click "Use settings" to use updated source and target
           folders.
         </p>
       </div>
@@ -1806,6 +1835,12 @@
       function handleChange(e) {
         // console.log(e.target.id + " " + e.target.getAttribute("data-target") + " " + e.target.checked);
         window[e.target.getAttribute("data-target")] = e.target.checked;
+      }
+
+      function setGuideColor(rgb) {
+        document.getElementById("colorpicker-wrapper").style.backgroundColor =
+          rgb;
+        guideColor = rgb.toLowerCase();
       }
 
       function processInput(e) {
