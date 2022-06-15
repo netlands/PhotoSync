@@ -32,6 +32,7 @@
     <!-- z-index of ::after https://stackoverflow.com/questions/3032856/is-it-possible-to-set-the-stacking-order-of-pseudo-elements-below-their-parent-e/9072467#9072467-->
     <!-- progressbar: http://buunguyen.github.io/topbar/-->
     <!-- https://mionskowski.pl/posts/positioning-a-context-menu-using-pure-css/ -->
+    <!-- -->
     <script>
       //var socket = io('http://localhost:3000');
       var socket = io();
@@ -58,7 +59,7 @@
       var previousReference = true;
       var exepath;
 
-      var guideColor = "#0000ff";
+      var guideColor = "#cbff3d"; // "#ff00ff"; // #00ffff
       var mirrorCrosshairs = false;
 
       const colorThief = new ColorThief();
@@ -1365,9 +1366,11 @@
           width: 32px;
           height: 32px;
           border: none;
+          cursor: pointer;
         }
         #colorpicker-wrapper {
           margin-left: 10px;
+          margin-right: 10px;
           border-radius: 50%;
           display: inline-block;
         }
@@ -1375,6 +1378,17 @@
         #colorpicker-label {
           line-height: 32px;
           vertical-align: bottom;
+        }
+
+        .color-swatch {
+          display: inline-block;
+          width: 32px;
+          height: 32px;
+          margin-left: 10px;
+          border-radius: 50%;
+          margin-bottom: -5px;
+          background-color: rgb(0, 255, 0);
+          cursor: pointer;
         }
       </style>
       <script>
@@ -1486,6 +1500,9 @@
 
           document.getElementById("colorpicker").value =
             guideColor.toLowerCase();
+          if (!guideColor.startsWith("#")) {
+            guideColor = color_convert.to_hex(guideColor);
+          }
           document.getElementById("colorpicker-wrapper").style.backgroundColor =
             guideColor;
 
@@ -1813,7 +1830,31 @@
               value="#ff0000"
               oninput="setGuideColor(this.value)"
           /></span>
-
+          <span
+            class="color-swatch"
+            style="background-color: #ff0000"
+            onclick="setGuideColor('#ff0000')"
+          ></span>
+          <span
+            class="color-swatch"
+            style="background-color: #ff00ff"
+            onclick="setGuideColor('#ff00ff')"
+          ></span>
+          <span
+            class="color-swatch"
+            style="background-color: #00ff00"
+            onclick="setGuideColor('#00ff00')"
+          ></span>
+          <span
+            class="color-swatch"
+            style="background-color: #00ffff"
+            onclick="setGuideColor('#00ffff')"
+          ></span>
+          <span
+            class="color-swatch"
+            style="background-color: #0000ff"
+            onclick="setGuideColor('#0000ff')"
+          ></span>
           <br />
           <br />
           <button
@@ -1841,6 +1882,7 @@
         document.getElementById("colorpicker-wrapper").style.backgroundColor =
           rgb;
         guideColor = rgb.toLowerCase();
+        document.getElementById("colorpicker").value = guideColor.toLowerCase();
       }
 
       function processInput(e) {
@@ -2476,6 +2518,82 @@
           h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
         return h;
       }
+
+      // cname = "blue";
+      // hexColor = color_convert.to_hex(cname);
+      color_convert = (function () {
+        var pub = {},
+          canvas,
+          context;
+        canvas = document.createElement("canvas");
+        canvas.height = 1;
+        canvas.width = 1;
+        context = canvas.getContext("2d");
+
+        function byte_to_hex(byte) {
+          // Turns a number (0-255) into a 2-character hex number (00-ff)
+          return ("0" + byte.toString(16)).slice(-2);
+        }
+
+        pub.to_rgba_array = function (color) {
+          /**
+           * Turns any valid canvas fillStyle into a 4-element Uint8ClampedArray with bytes
+           * for R, G, B, and A. Invalid styles will return [0, 0, 0, 0]. Examples:
+           * color_convert.to_rgb_array('red')  # [255, 0, 0, 255]
+           * color_convert.to_rgb_array('#ff0000')  # [255, 0, 0, 255]
+           * color_convert.to_rgb_array('garbagey')  # [0, 0, 0, 0]
+           */
+          // Setting an invalid fillStyle leaves this unchanged
+          context.fillStyle = "rgba(0, 0, 0, 0)";
+          // We're reusing the canvas, so fill it with something predictable
+          context.clearRect(0, 0, 1, 1);
+          context.fillStyle = color;
+          context.fillRect(0, 0, 1, 1);
+          return context.getImageData(0, 0, 1, 1).data;
+        };
+
+        pub.to_rgba = function (color) {
+          /**
+           * Turns any valid canvas fill style into an rgba() string. Returns
+           * 'rgba(0,0,0,0)' for invalid colors. Examples:
+           * color_convert.to_rgba('red')  # 'rgba(255,0,0,1)'
+           * color_convert.to_rgba('#f00')  # 'rgba(255,0,0,1)'
+           * color_convert.to_rgba('garbagey')  # 'rgba(0,0,0,0)'
+           * color_convert.to_rgba(some_pattern)  # Depends on the pattern
+           *
+           * @param color  A string, pattern, or gradient
+           * @return  A valid rgba CSS color string
+           */
+          var a = pub.to_rgba_array(color);
+          return (
+            "rgba(" + a[0] + "," + a[1] + "," + a[2] + "," + a[3] / 255 + ")"
+          );
+        };
+
+        pub.to_hex = function (color) {
+          /**
+           * Turns any valid canvas fill style into a hex triple. Returns
+           * '#000000' for invalid colors. Examples:
+           * color_convert.to_hex('red')  # '#ff0000'
+           * color_convert.to_hex('rgba(255,0,0,1)')  # '#ff0000'
+           * color_convert.to_hex('garbagey')  # '#000000'
+           * color_convert.to_hex(some_pattern)  # Depends on the pattern
+           *
+           * @param color  A string, pattern, or gradient
+           * @return  A valid rgba CSS color string
+           */
+          var a = pub.to_rgba_array(color);
+          // Sigh, you can't map() typed arrays
+          var hex = [0, 1, 2]
+            .map(function (i) {
+              return byte_to_hex(a[i]);
+            })
+            .join("");
+          return "#" + hex;
+        };
+
+        return pub;
+      })();
     </script>
   </body>
 </html>
