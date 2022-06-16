@@ -100,6 +100,7 @@ if (inspector.url() !== undefined) {
     console.log(exepath);
     if (fs.existsSync(appConfig)) {
       readConfig(appConfig);
+      console.log("Read settings from " + appConfig);
     } else {
       console.log(appConfig);
       writeConfig(appConfig, rawdata);
@@ -108,6 +109,9 @@ if (inspector.url() !== undefined) {
     isApp = false;
     if (fs.existsSync("config.local.json")) {
       readConfig(path.join(__dirname, "config.local.json"));
+      console.log(
+        "Read settings from " + path.join(__dirname, "config.local.json")
+      );
     } else {
       // no local config
       writeConfig(path.join(__dirname, "config.local.json"), rawdata);
@@ -210,7 +214,17 @@ io.on("connection", (socket) => {
     watcher.unwatch(sourceFolder);
     sourceFolder = msg.source;
     watcher.add(sourceFolder);
-    console.log("Now watching " + sourceFolder)
+    console.log("Now watching " + sourceFolder);
+  });
+
+  socket.on("updateconfig", (msg) => {
+    console.log("Saved setting to " + path.join(exepath, "config.local.json"));
+    fs.writeFileSync(
+      path.join(exepath, "config.local.json"),
+      JSON.stringify(msg, null, 2)
+    );
+    msg.remoteaddress = remoteAddress;
+    io.emit("config", msg);
   });
 
   socket.on("delete target", (msg) => {

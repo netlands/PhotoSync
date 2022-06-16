@@ -39,25 +39,33 @@
 
       var splashScreen = true;
       var showWarning = false;
-      var playAudio = true;
 
       var sourceFile, targetFile, filename;
       var firstFile = true;
 
-      var checkSettings = true;
+      var checkSettings = false;
       var cameraDefault = "M, SS 1/250, f/7.1, ISO 200, 0 EV, Flash fired";
+      var defaultHash = "";
       var cameraHash = "";
 
       var maxItemLen = 20;
 
+      var playAudio = true;
       var showgrid = true;
+      var quicksort = false;
       var showCompare = false;
       var zoomActive = false;
       var showCrosshairs = true;
       var showFileinfo = true;
       var hideGridOnMouseOver = true;
-      var previousReference = true;
-      var exepath;
+      var previousReference = false;
+
+      var targetfolder,
+        sourcefolder,
+        extension,
+        autocopy,
+        exepath,
+        remoteaddress;
 
       var guideColor = "#cbff3d"; // "#ff00ff"; // #00ffff
       var mirrorCrosshairs = false;
@@ -172,7 +180,7 @@
             cameraHash = hashCode($("#file-info").text());
             $("#exif").attr("data-clipboard-text", $("#file-info").text());
             if (checkSettings) {
-              if (cameraHash == cameraDefault) {
+              if (cameraHash == defaultHash) {
                 $("#file-info").removeClass("bad");
               } else {
                 $("#file-info").addClass("bad");
@@ -277,21 +285,17 @@
         }
       }
 
-      var targetfolder,
-        sourcefolder,
-        extension,
-        autocopy,
-        quicksort,
-        showgrid,
-        remoteaddress;
-
       socket.on("exepath", function (msg) {
         console.log(msg);
         exePath = msg;
       });
 
       socket.on("config", function (msg) {
-        // console.log(msg);
+        //console.log(msg);
+        parseConfig(msg);
+      });
+
+      function parseConfig(msg) {
         let config = msg;
         targetfolder = config.target;
         sourcefolder = config.source;
@@ -309,7 +313,8 @@
         quicksort = config.settings.quicksort;
         playAudio = config.settings.playaudio;
         checkSettings = config.settings.checksettings;
-        cameraDefault = hashCode(config.defaults);
+        cameraDefault = config.defaults;
+        defaultHash = hashCode(config.defaults);
         previousReference = config.settings.previousreference;
         document.getElementById("source").innerText = msg.source.substring(
           0,
@@ -363,7 +368,7 @@
           $("#triage").addClass("hide");
           $(".quick-sort").removeClass("hide-menu-item");
         }
-      });
+      }
 
       var mirrorX = 0;
       var mirrorY = 0;
@@ -1396,6 +1401,7 @@
         var modal = document.getElementById("help");
 
         function showHelp() {
+          modalVisible = true;
           modal.style.display = "block";
         }
 
@@ -1403,11 +1409,12 @@
           modal.style.display = "none";
         }
 
-        function sendConfig() {
+        function sendConfig(save) {
           const config = new Object();
-          config.target = targetfolder;
           config.source = sourcefolder;
+          config.target = targetfolder;
           config.extension = extension;
+          config.defaults = cameraDefault;
           const settings = new Object();
           settings.autocopy = autocopy;
           config.settings = settings;
@@ -1416,15 +1423,20 @@
           config.settings.mirrorcrosshairs = mirrorCrosshairs;
           config.settings.guidecolor = guideColor;
           config.settings.quicksort = quicksort;
+          config.settings.previousreference = previousReference;
           config.settings.playaudio = playAudio;
           config.settings.checksettings = checkSettings;
-          config.defaults = cameraDefault;
-          config.settings.previousreference = previousReference;
 
           closeSettings();
-          socket.emit("setconfig", config);
-          // socket.emit("getconfig", "hi there!");
+          if (save) {
+            socket.emit("updateconfig", config);
+            socket.emit("setconfig", config);
+          } else {
+            socket.emit("setconfig", config);
+          }
         }
+
+        var modalVisible = false;
 
         function showSettings() {
           document.getElementById("srcFolderField").value = sourcefolder;
@@ -1483,6 +1495,11 @@
               .getElementById("checkSettingsCheck")
               .parentElement.classList.add("is-checked");
           }
+          if (previousReference) {
+            document
+              .getElementById("previousReferenceCheck")
+              .parentElement.classList.add("is-checked");
+          }
           document.getElementById("autoCopyCheck").checked = autocopy;
           document.getElementById("playAudioCheck").checked = playAudio;
           document.getElementById("showGridCheck").checked = showgrid;
@@ -1493,10 +1510,12 @@
           document.getElementById("showQuicksortCheck").checked = quicksort;
           document.getElementById("showInfoCheck").checked = showFileinfo;
           document.getElementById("checkSettingsCheck").checked = checkSettings;
-          /*document.getElementById("settingsField").value = cameraDefault;
+          document.getElementById("previousReferenceCheck").checked =
+            checkSettings;
+          document.getElementById("settingsField").value = cameraDefault;
           document
             .getElementById("settingsField")
-            .parentElement.classList.add("is-dirty");*/
+            .parentElement.classList.add("is-dirty");
 
           document.getElementById("colorpicker").value =
             guideColor.toLowerCase();
@@ -1506,6 +1525,7 @@
           document.getElementById("colorpicker-wrapper").style.backgroundColor =
             guideColor;
 
+          modalVisible = true;
           document.getElementById("settings").style.display = "block";
         }
 
@@ -1614,99 +1634,7 @@
           </button></span
         >
         <h3>Settings</h3>
-        <div>
-          <div
-            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
-          >
-            <input
-              class="mdl-textfield__input"
-              type="text"
-              id="srcFolderField"
-              pattern='^(?:[a-zA-Z]:)?[\/\\]{0,2}(?:[.\/\\ ](?![.\/\\\n])|[^<>:"|?*.\/\\ \n])+$'
-              value="Z:\DCIM"
-              data-target="sourcefolder"
-              onblur="processInput(event)"
-            />
-            <label class="mdl-textfield__label" for="srcFolderField"
-              >Folder to watch</label
-            >
-            <span class="mdl-textfield__error"
-              >Enter a valid folder location</span
-            >
-          </div>
-          <br />
-          <div
-            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
-          >
-            <input
-              class="mdl-textfield__input"
-              type="text"
-              id="extField"
-              pattern="^(jpg|jpeg|png|svg)$"
-              value="jpg"
-              data-target="extension"
-              onblur="processInput(event)"
-            />
-            <label class="mdl-textfield__label" for="extField"
-              >File extension</label
-            >
-            <span class="mdl-textfield__error">Enter a valid extension</span>
-          </div>
-          <br />
-          <div
-            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
-          >
-            <input
-              class="mdl-textfield__input"
-              type="text"
-              id="tgtFolderField"
-              pattern='^(?:[a-zA-Z]:)?[\/\\]{0,2}(?:[.\/\\ ](?![.\/\\\n])|[^<>:"|?*.\/\\ \n])+$'
-              value="d:\work"
-              data-target="targetfolder"
-              onblur="processInput(event)"
-            />
-            <label class="mdl-textfield__label" for="tgtFolderField"
-              >Target folder</label
-            >
-            <span class="mdl-textfield__error"
-              >Enter a valid folder location</span
-            >
-          </div>
-          <!--div
-            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
-          >
-            <input
-              class="mdl-textfield__input"
-              type="text"
-              id="sessionField"
-              pattern="^([a-zA-Z ])+$"
-              value=""
-              data-target="sessionfolder"
-              onblur="processInput(event)"
-            />
-            <label class="mdl-textfield__label" for="sessionField"
-              >Session (folder) name (optional)</label
-            >
-            <span class="mdl-textfield__error">Enter a valid name</span>
-          </div>
-          <br /-->
-
-          <label
-            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
-            for="autoCopyCheck"
-          >
-            <input
-              type="checkbox"
-              id="autoCopyCheck"
-              class="mdl-checkbox__input"
-              data-target="autocopy"
-              onchange="handleChange(event)"
-            />
-            <span class="mdl-checkbox__label">Auto copy files</span>
-          </label>
-          <br />
-          <br />
-          <br />
+        <div id="local-settings">
           <label
             class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
             for="playAudioCheck"
@@ -1790,36 +1718,22 @@
             />
             <span class="mdl-checkbox__label">Show info</span>
           </label>
-
           <label
             class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
-            for="checkSettingsCheck"
+            for="previousReferenceCheck"
           >
             <input
               type="checkbox"
-              id="checkSettingsCheck"
+              id="previousReferenceCheck"
               class="mdl-checkbox__input"
-              data-target="checkSettings"
+              data-target="previousReference"
               onchange="handleChange(event)"
             />
-            <span class="mdl-checkbox__label">Check camera settings</span>
+            <span class="mdl-checkbox__label"
+              >Use previous photo as reference</span
+            >
           </label>
 
-          <!--div
-            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
-          >
-            <input
-              class="mdl-textfield__input"
-              type="text"
-              id="settingsField"
-              value=""
-              data-target="cameraDefault"
-              onblur="processInput(event)"
-            />
-            <label class="mdl-textfield__label" for="settingsField"
-              >Camera settings</label
-            >
-          </div-->
           <br />
           <br />
           <label id="colorpicker-label" for="colorpicker">Guide color </label>
@@ -1855,20 +1769,156 @@
             style="background-color: #0000ff"
             onclick="setGuideColor('#0000ff')"
           ></span>
-          <br />
-          <br />
-          <button
-            class="mdl-button mdl-js-button mdl-button--raised"
-            onclick="sendConfig()"
-          >
-            Use settings
-          </button>
         </div>
         <br />
-        <p>
-          You need to click "Use settings" to use updated source and target
-          folders.
-        </p>
+        <br />
+        <br />
+        <div id="watcher-settings">
+          <div
+            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+          >
+            <input
+              class="mdl-textfield__input"
+              type="text"
+              id="srcFolderField"
+              pattern='^(?:[a-zA-Z]:)?[\/\\]{0,2}(?:[.\/\\ ](?![.\/\\\n])|[^<>:"|?*.\/\\ \n])+$'
+              value="Z:\DCIM"
+              data-target="sourcefolder"
+              onblur="processInput(event)"
+            />
+            <label class="mdl-textfield__label" for="srcFolderField"
+              >Source folder to watch</label
+            >
+            <span class="mdl-textfield__error"
+              >Enter a valid folder location</span
+            >
+          </div>
+          <br />
+
+          <div
+            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+          >
+            <select
+              class="mdl-textfield__input"
+              id="extField"
+              data-target="extension"
+              onblur="processInput(event)"
+            >
+              <option value="jpg">jpg</option>
+              <option value="jpeg">jpeg</option>
+              <option value="png">png</option>
+              <option value="svg">svg</option>
+            </select>
+            <label class="mdl-textfield__label" for="extField"
+              >File extension</label
+            >
+          </div>
+          <br />
+          <div
+            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+          >
+            <input
+              class="mdl-textfield__input"
+              type="text"
+              id="tgtFolderField"
+              pattern='^(?:[a-zA-Z]:)?[\/\\]{0,2}(?:[.\/\\ ](?![.\/\\\n])|[^<>:"|?*.\/\\ \n])+$'
+              value="d:\work"
+              data-target="targetfolder"
+              onblur="processInput(event)"
+            />
+            <label class="mdl-textfield__label" for="tgtFolderField"
+              >Target folder</label
+            >
+            <span class="mdl-textfield__error"
+              >Enter a valid folder location</span
+            >
+          </div>
+          <!--div
+            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+          >
+            <input
+              class="mdl-textfield__input"
+              type="text"
+              id="sessionField"
+              pattern="^([a-zA-Z ])+$"
+              value=""
+              data-target="sessionfolder"
+              onblur="processInput(event)"
+            />
+            <label class="mdl-textfield__label" for="sessionField"
+              >Session (folder) name (optional)</label
+            >
+            <span class="mdl-textfield__error">Enter a valid name</span>
+          </div>
+          <br /-->
+
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="autoCopyCheck"
+          >
+            <input
+              type="checkbox"
+              id="autoCopyCheck"
+              class="mdl-checkbox__input"
+              data-target="autocopy"
+              onchange="handleChange(event)"
+            />
+            <span class="mdl-checkbox__label">Auto copy files</span>
+          </label>
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="checkSettingsCheck"
+          >
+            <input
+              type="checkbox"
+              id="checkSettingsCheck"
+              class="mdl-checkbox__input"
+              data-target="checkSettings"
+              onchange="handleChange(event); toggleCameraSettings(this.checked);"
+            />
+            <span class="mdl-checkbox__label">Check camera settings</span>
+          </label>
+          <div
+            id="cameraSettingsField"
+            class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
+          >
+            <input
+              class="mdl-textfield__input"
+              type="text"
+              id="settingsField"
+              value=""
+              data-target="cameraDefault"
+              onblur="processInput(event)"
+            />
+            <label class="mdl-textfield__label" for="settingsField"
+              >Camera settings</label
+            >
+          </div>
+          <br />
+          <br />
+          <span style="float: left">
+            <button
+              class="mdl-button mdl-js-button mdl-button--raised"
+              onclick="sendConfig(false)"
+            >
+              Use settings
+            </button></span
+          >
+          <span style="float: right">
+            <button
+              class="mdl-button mdl-js-button mdl-button--raised"
+              onclick="sendConfig(true)"
+            >
+              Save and use settings
+            </button></span
+          >
+          <br />
+          <br />
+          <p>
+            You need to click "Use settings" to use updated source and target
+            folders.
+          </p>
+        </div>
       </div>
     </div>
     <span class="debug"></span>
@@ -1888,6 +1938,14 @@
       function processInput(e) {
         console.log(e.target.value);
         window[e.target.getAttribute("data-target")] = e.target.value;
+      }
+
+      function toggleCameraSettings(value) {
+        if (value) {
+          $("#cameraSettingsField").show();
+        } else {
+          $("#cameraSettingsField").hide();
+        }
       }
 
       function createGrid() {
