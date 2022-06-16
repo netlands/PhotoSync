@@ -498,18 +498,18 @@
             guideCount++;
             context.beginPath();
             context.moveTo(0, y - 4); // offset crosshair
-            context.lineTo(3000, y);
+            context.lineTo(3000, y - 4);
             context.moveTo(x - 2, 0); // offset crosshair
-            context.lineTo(x, 3000);
+            context.lineTo(x - 2, 3000);
             context.strokeStyle = guideColor;
             context.stroke();
             context.closePath();
             if (mirrorCrosshairs) {
               context.beginPath();
               context.moveTo(0, mirrorY - 4); // offset crosshair
-              context.lineTo(3000, mirrorY);
+              context.lineTo(3000, mirrorY - 4);
               context.moveTo(mirrorX - 2, 0); // offset crosshair
-              context.lineTo(mirrorX, 3000);
+              context.lineTo(mirrorX - 2, 3000);
               context.strokeStyle = guideColor;
               context.stroke();
               context.closePath();
