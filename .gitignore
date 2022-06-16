@@ -127,6 +127,8 @@ dist
 .pnp.*
 
 # Local test data
+.vscode/
+*.code-workspace
 *.jpg
 *.zip
 test/
