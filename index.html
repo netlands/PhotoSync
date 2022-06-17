@@ -478,6 +478,8 @@
         canvas.height = canvas.offsetHeight;
         let guideCount = 0;
 
+        guides = new Array();
+
         // http://jsfiddle.net/PgKEt/2/
         canvas.addEventListener("click", function (event) {
           const shift = event.getModifierState("Shift");
@@ -486,6 +488,7 @@
           if (ctrl && shift) {
             context.clearRect(0, 0, canvas.width, canvas.height);
             guideCount = 0;
+            guides = [];
           } else if (ctrl && !shift) {
             var x = event.pageX - canvas.offsetLeft;
             var y = event.pageY - canvas.offsetTop;
@@ -494,8 +497,11 @@
               canvas.width = canvas.offsetWidth;
               canvas.height = canvas.offsetHeight;
               guideCount = 0;
+              guides = [];
             }
             guideCount++;
+            guide = { x: x - 2, y: y - 4, color: guideColor };
+            guides.push(guide);
             context.beginPath();
             context.moveTo(0, y - 4); // offset crosshair
             context.lineTo(3000, y - 4);
@@ -505,6 +511,8 @@
             context.stroke();
             context.closePath();
             if (mirrorCrosshairs) {
+              guide = { x: mirrorX - 2, y: mirrorY - 4, color: guideColor };
+              guides.push(guide);
               context.beginPath();
               context.moveTo(0, mirrorY - 4); // offset crosshair
               context.lineTo(3000, mirrorY - 4);
