@@ -40,6 +40,8 @@
       var splashScreen = true;
       var showWarning = false;
 
+      local = true;
+
       var sourceFile, targetFile, filename;
       var firstFile = true;
 
@@ -106,6 +108,7 @@
 
       socket.on("connect", function () {
         console.log("Connected to watcher");
+        local = false;
         connectSnd();
         $("#file-info").html('<span class="dot"></span>Connected to server');
         $("#file-info").addClass("ok");
@@ -1455,6 +1458,11 @@
         var modalVisible = false;
 
         function showSettings() {
+          if (local) {
+            $(".server-based").hide();
+          } else {
+            $(".server-based").show();
+          }
           document.getElementById("srcFolderField").value = sourcefolder;
           document
             .getElementById("srcFolderField")
@@ -1800,9 +1808,10 @@
           />
           <span class="mdl-checkbox__label">Save current guides</span>
         </label>
-        <br />
-        <br />
+
         <div id="watcher-settings" class="server-based">
+          <br />
+          <br />
           <div
             class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
           >
