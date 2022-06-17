@@ -51,7 +51,7 @@
       var maxItemLen = 20;
 
       var playAudio = true;
-      var showgrid = true;
+      var showgrid = false;
       var quicksort = false;
       var showCompare = false;
       var zoomActive = false;
@@ -1417,6 +1417,8 @@
           modal.style.display = "none";
         }
 
+        saveGuides = false;
+
         function sendConfig(save) {
           const config = new Object();
           config.source = sourcefolder;
@@ -1434,6 +1436,12 @@
           config.settings.previousreference = previousReference;
           config.settings.playaudio = playAudio;
           config.settings.checksettings = checkSettings;
+
+          if (saveGuides) {
+            if (guides.length > 0) {
+              config.settings.guides = Object.assign({}, guides);
+            }
+          }
 
           closeSettings();
           if (save) {
@@ -1779,9 +1787,22 @@
           ></span>
         </div>
         <br />
+        <label
+          class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect server-based"
+          for="saveGuidesCheck"
+        >
+          <input
+            type="checkbox"
+            id="saveGuidesCheck"
+            class="mdl-checkbox__input"
+            data-target="saveGuides"
+            onchange="handleChange(event)"
+          />
+          <span class="mdl-checkbox__label">Save current guides</span>
+        </label>
         <br />
         <br />
-        <div id="watcher-settings">
+        <div id="watcher-settings" class="server-based">
           <div
             class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label"
           >

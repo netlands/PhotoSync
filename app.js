@@ -36,8 +36,6 @@ let sourceFolder = config.source;
 let targetFolder = config.target;
 let extension = config.extension;
 let autoCopy = config.settings.autocopy;
-let showGrid = config.settings.showgrid;
-let quickSort = config.settings.quicksort;
 
 let remoteAddress = "127.0.0.1";
 
@@ -58,15 +56,6 @@ function readConfig(configFile) {
   targetFolder = config.target;
   extension = config.extension;
   autoCopy = config.settings.autocopy;
-  showGrid = config.settings.showgrid;
-  showCrosshairs = config.settings.showcrosshairs;
-  mirrorCrosshairs = config.settings.mirrorcrosshairs;
-  guideColor = config.settings.guidecolor;
-  quickSort = config.settings.quicksort;
-
-  playAudio = config.settings.playaudio;
-  checkSettings = config.settings.checksettings;
-  cameraDefaults = config.defaults;
 }
 
 function writeConfig(configFile, configData) {
@@ -210,11 +199,12 @@ io.on("connection", (socket) => {
     //console.log(msg);
     targetFolder = msg.target;
     extension = msg.extension;
-    autoCopy = msg.autocopy;
+    autoCopy = msg.settings.autocopy;
     watcher.unwatch(sourceFolder);
     sourceFolder = msg.source;
     watcher.add(sourceFolder);
     console.log("Now watching " + sourceFolder);
+    console.log("autocopy: " + autoCopy);
   });
 
   socket.on("updateconfig", (msg) => {
