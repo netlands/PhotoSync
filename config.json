@@ -12,6 +12,7 @@
     "quicksort": false,
     "previousreference": true,
     "playaudio": true,
-    "checksettings": false
+    "checksettings": false,
+    "lockguides": false
   }
 }

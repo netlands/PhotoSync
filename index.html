@@ -61,6 +61,7 @@
       var showFileinfo = true;
       var hideGridOnMouseOver = true;
       var previousReference = false;
+      var lockGuides = false;
 
       var targetfolder,
         sourcefolder,
@@ -319,6 +320,7 @@
         cameraDefault = config.defaults;
         defaultHash = hashCode(config.defaults);
         previousReference = config.settings.previousreference;
+        lockGuides = config.settings.lockguides;
         document.getElementById("source").innerText = msg.source.substring(
           0,
           msg.source.lastIndexOf("\\")
@@ -340,6 +342,10 @@
 
         remoteaddress = config.remoteaddress;
         console.log(remoteaddress);
+
+        if (config.settings.hasOwnProperty("guides")) {
+          drawGuides(config.settings.guides);
+        }
 
         if (autocopy) {
           console.log("autocopy on");
@@ -485,49 +491,72 @@
 
         // http://jsfiddle.net/PgKEt/2/
         canvas.addEventListener("click", function (event) {
-          const shift = event.getModifierState("Shift");
-          const ctrl = event.getModifierState("Control");
-          // const alt = event.getModifierState("Alt");
-          if (ctrl && shift) {
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            guideCount = 0;
-            guides = [];
-          } else if (ctrl && !shift) {
-            var x = event.pageX - canvas.offsetLeft;
-            var y = event.pageY - canvas.offsetTop;
-            if (guideCount == 0 || guideCount > 1) {
+          if (!lockGuides) {
+            const shift = event.getModifierState("Shift");
+            const ctrl = event.getModifierState("Control");
+            // const alt = event.getModifierState("Alt");
+            if (ctrl && shift) {
               context.clearRect(0, 0, canvas.width, canvas.height);
-              canvas.width = canvas.offsetWidth;
-              canvas.height = canvas.offsetHeight;
               guideCount = 0;
               guides = [];
-            }
-            guideCount++;
-            guide = { x: x - 2, y: y - 4, color: guideColor };
-            guides.push(guide);
-            context.beginPath();
-            context.moveTo(0, y - 4); // offset crosshair
-            context.lineTo(3000, y - 4);
-            context.moveTo(x - 2, 0); // offset crosshair
-            context.lineTo(x - 2, 3000);
-            context.strokeStyle = guideColor;
-            context.stroke();
-            context.closePath();
-            if (mirrorCrosshairs) {
-              guide = { x: mirrorX - 2, y: mirrorY - 4, color: guideColor };
+            } else if (ctrl && !shift) {
+              var x = event.pageX - canvas.offsetLeft;
+              var y = event.pageY - canvas.offsetTop;
+              if (guideCount == 0 || guideCount > 1) {
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+                guideCount = 0;
+                guides = [];
+              }
+              guideCount++;
+              guide = { x: x - 2, y: y - 4, color: guideColor };
               guides.push(guide);
               context.beginPath();
-              context.moveTo(0, mirrorY - 4); // offset crosshair
-              context.lineTo(3000, mirrorY - 4);
-              context.moveTo(mirrorX - 2, 0); // offset crosshair
-              context.lineTo(mirrorX - 2, 3000);
+              context.moveTo(0, y - 4); // offset crosshair
+              context.lineTo(3000, y - 4);
+              context.moveTo(x - 2, 0); // offset crosshair
+              context.lineTo(x - 2, 3000);
               context.strokeStyle = guideColor;
               context.stroke();
               context.closePath();
+              if (mirrorCrosshairs) {
+                guide = { x: mirrorX - 2, y: mirrorY - 4, color: guideColor };
+                guides.push(guide);
+                context.beginPath();
+                context.moveTo(0, mirrorY - 4); // offset crosshair
+                context.lineTo(3000, mirrorY - 4);
+                context.moveTo(mirrorX - 2, 0); // offset crosshair
+                context.lineTo(mirrorX - 2, 3000);
+                context.strokeStyle = guideColor;
+                context.stroke();
+                context.closePath();
+              }
             }
           }
         });
       });
+
+      function drawGuides(guides) {
+        var canvas = document.getElementById("guides");
+        var context = canvas.getContext("2d");
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        guideCount = 0;
+        Object.keys(guides).forEach((e) => {
+          // console.log(e + ": " + guides[e].x + " " + guides[e].y + " " + guides[e].color);
+          guideCount++;
+          context.beginPath();
+          context.moveTo(0, guides[e].y);
+          context.lineTo(3000, guides[e].y);
+          context.moveTo(guides[e].x, 0);
+          context.lineTo(guides[e].x, 3000);
+          context.strokeStyle = guides[e].color;
+          context.stroke();
+          context.closePath();
+        });
+      }
 
       // https://riptutorial.com/html5-canvas/example/9061/image-cropping-using-canvas
       function cropImage(image, croppingCoords) {
@@ -1439,6 +1468,7 @@
           config.settings.previousreference = previousReference;
           config.settings.playaudio = playAudio;
           config.settings.checksettings = checkSettings;
+          config.settings.lockguides = lockGuides;
 
           if (saveGuides) {
             if (guides.length > 0) {
@@ -2166,6 +2196,16 @@
         autocopy = config.settings.autocopy;
         showgrid = config.settings.showgrid;
         quicksort = config.settings.quicksort;
+        showCrosshairs = config.settings.showcrosshairs;
+        mirrorCrosshairs = config.settings.mirrorcrosshairs;
+        guideColor = config.settings.guidecolor;
+        playAudio = config.settings.playaudio;
+        lockGuides = config.settings.lockguides;
+        checkSettings = config.settings.checksettings;
+        previousReference = config.settings.previousreference;
+        if (config.settings.hasOwnProperty("guides")) {
+          drawGuides(config.settings.guides);
+        }
       }
 
       function toggleQuickSort() {
