@@ -32,8 +32,8 @@ const path = require("path");
 
 let rawdata = fs.readFileSync(path.join(__dirname, "config.json"));
 let config = JSON.parse(rawdata);
-let sourceFolder = config.source;
-let targetFolder = config.target;
+let sourceFolder = checkFolderFormat(config.source);
+let targetFolder = checkFolderFormat(config.target);
 let extension = config.extension;
 let autoCopy = config.settings.autocopy;
 
@@ -47,6 +47,13 @@ if (regExp.test(exepath)) {
     match = regExp.exec(exepath);
     exepath = match[1];
   }
+}
+
+function checkFolderFormat(folderIn) {
+  if (!folderIn.endsWith("\\")) {
+    folderIn = folderIn + "\\";
+  }
+  return folderIn;
 }
 
 function readConfig(configFile) {
@@ -186,12 +193,12 @@ io.on("connection", (socket) => {
   });
 
   socket.on("settargetfolder", (msg) => {
-    targetFolder = msg;
+    targetFolder = checkFolderFormat(msg);
   });
 
   socket.on("setsourcefolder", (msg) => {
     watcher.unwatch(sourceFolder);
-    sourceFolder = msg;
+    sourceFolder = checkFolderFormat(msg);
     watcher.add(sourceFolder);
   });
 
@@ -205,6 +212,8 @@ io.on("connection", (socket) => {
     watcher.add(sourceFolder);
     console.log("Now watching " + sourceFolder);
     console.log("autocopy: " + autoCopy);
+    msg.remoteaddress = remoteAddress;
+    io.emit("config", msg);
   });
 
   socket.on("updateconfig", (msg) => {
@@ -213,8 +222,6 @@ io.on("connection", (socket) => {
       path.join(exepath, "config.local.json"),
       JSON.stringify(msg, null, 2)
     );
-    msg.remoteaddress = remoteAddress;
-    io.emit("config", msg);
   });
 
   socket.on("delete target", (msg) => {

@@ -1453,8 +1453,8 @@
 
         function sendConfig(save) {
           const config = new Object();
-          config.source = sourcefolder;
-          config.target = targetfolder;
+          config.source = checkFolderFormat(sourcefolder);
+          config.target = checkFolderFormat(targetfolder);
           config.extension = extension;
           config.defaults = cameraDefault;
           const settings = new Object();
@@ -1486,6 +1486,13 @@
         }
 
         var modalVisible = false;
+
+        function checkFolderFormat(folderIn) {
+          if (!folderIn.endsWith("\\")) {
+            folderIn = folderIn + "\\";
+          }
+          return folderIn;
+        }
 
         function showSettings() {
           if (local) {
