@@ -65,7 +65,7 @@ Optionally you can place a **reference.jpg** file in the application folder to b
 
 When automatically checking camera settings enter the required settings in the **config.local.json** under **defaults**  in the same way they are displayed in the app.
 
-    "defaults": "M, SS 1/250, f/7.1, ISO 200, 0 EV, Flash fired"
+    "defaults": "M, SS 1/250, f/7.1, ISO 200, 0 EV, Flash fired, ratio 1:1"
 
 You can copy the values to the clipboard from the right-click context menu.
 
