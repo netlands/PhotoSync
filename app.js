@@ -357,6 +357,7 @@ function processFile(path) {
 
     try {
       const tags = ExifReader.load(fs.readFileSync(target));
+      // console.log(tags);
       // console.log(tags['DateTimeOriginal'].description);
       exif.SS = tags["ExposureTime"].description;
       exif.F = tags["FNumber"].description;
@@ -365,6 +366,7 @@ function processFile(path) {
       exif.mode = getMode(tags["ExposureProgram"].value);
       exif.flash = flashFired(tags["Flash"].description);
       exif.WB = tags["WhiteBalance"].description.toString().split(" ")[0];
+      exif.ratio = ratio(tags["Image Width"].value, tags["Image Height"].value);
       io.emit("new data", exif);
     } catch (error) {
       console.log("No exif data"); // error.message
@@ -375,6 +377,7 @@ function processFile(path) {
       exif.flash = "";
       exif.mode = "";
       exif.WB = "";
+      exif.ratio = "";
       io.emit("new data", exif);
     }
 
@@ -448,6 +451,14 @@ function fra_to_dec(value) {
   } else {
     return Math.round(value * 1000) / 1000;
   }
+}
+
+function gcd($a, $b) {
+  return $a % $b ? gcd($b, $a % $b) : $b;
+}
+function ratio($x, $y) {
+  $gcd = gcd($x, $y);
+  return $x / $gcd + ":" + $y / $gcd;
 }
 
 // https://stackoverflow.com/questions/190852/how-can-i-get-file-extensions-with-javascript

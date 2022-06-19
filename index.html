@@ -46,7 +46,8 @@
       var firstFile = true;
 
       var checkSettings = false;
-      var cameraDefault = "M, SS 1/250, f/7.1, ISO 200, 0 EV, Flash fired";
+      var cameraDefault =
+        "M, SS 1/250, f/7.1, ISO 200, 0 EV, Flash fired, ratio: 1:1";
       var defaultHash = "";
       var cameraHash = "";
 
@@ -178,7 +179,9 @@
                 ", " +
                 msg.EV +
                 " EV, " +
-                msg.flash
+                msg.flash +
+                ", ratio " +
+                msg.ratio
             ); // + " " + );
             $("#file-info").show();
             cameraHash = hashCode($("#file-info").text());
