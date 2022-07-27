@@ -356,7 +356,9 @@
           drawGuides(config.settings.guides);
         }
 
-        if (showCropGuides) { drawCropGuides() };
+        if (showCropGuides) {
+          drawCropGuides();
+        }
 
         if (autocopy) {
           console.log("autocopy on");
@@ -544,7 +546,9 @@
                 context.closePath();
               }
             }
-            if (showCropGuides) { drawCropGuides() };
+            if (showCropGuides) {
+              drawCropGuides();
+            }
           }
         });
       });
@@ -568,7 +572,9 @@
           context.stroke();
           context.closePath();
         });
-        if (showCropGuides) { drawCropGuides() };
+        if (showCropGuides) {
+          drawCropGuides();
+        }
       }
 
       function drawCropGuides() {
@@ -580,7 +586,7 @@
         var cropHeight =
           (canvas.height - cropguidemargin * 2) *
           (cropratioheigth / cropratiowidth);
-        
+
         context.beginPath();
         context.rect(
           cropguidemargin,
@@ -593,15 +599,13 @@
         context.stroke();
 
         cropWidth = canvas.width;
-        cropHeight =
-          (canvas.height) *
-          (cropratioheigth / cropratiowidth);
+        cropHeight = canvas.height * (cropratioheigth / cropratiowidth);
 
-        context.beginPath();  
+        context.beginPath();
         context.rect(
           1,
           (canvas.height - cropHeight) / 2,
-          cropWidth-2,
+          cropWidth - 2,
           cropHeight
         );
         context.setLineDash([5, 5]);
@@ -609,8 +613,6 @@
         context.strokeStyle = cropguidecolor;
         context.stroke();
         context.setLineDash([]);
-
-
       }
 
       // https://riptutorial.com/html5-canvas/example/9061/image-cropping-using-canvas
@@ -642,12 +644,14 @@
           $("body").removeClass("light");
           $(".hair").addClass("light");
           $("#image").removeClass("dark");
+          cropguidecolor = "lightgray"
         } else {
           console.log("light");
           $("body").addClass("light");
           $("body").removeClass("dark");
           $(".hair").removeClass("light");
           $("#image").addClass("dark");
+          cropguidecolor = "darkgray"
         }
       }
 
@@ -1226,7 +1230,7 @@
       </div>
       <div class="item" onclick="toggleCropGuides();">
         <span class="material-icons">crop</span> Crop Guides on/off
-      </div>      
+      </div>
       <div class="item" onclick="toggleZoom();">
         <span id="zoom_toggle" class="material-icons">zoom_in</span> Zoom View
         on/off
@@ -1599,6 +1603,11 @@
               .getElementById("mirrorCrosshairsCheck")
               .parentElement.classList.add("is-checked");
           }
+          if (showCropGuides) {
+            document
+              .getElementById("showCropGuidesCheck")
+              .parentElement.classList.add("is-checked");
+          }          
           if (quicksort) {
             document
               .getElementById("showQuicksortCheck")
@@ -1808,6 +1817,20 @@
               onchange="handleChange(event)"
             />
             <span class="mdl-checkbox__label">Mirror crosshairs</span>
+          </label>
+
+          <label
+            class="mdl-checkbox mdl-js-checkbox mdl-js-ripple-effect"
+            for="showCropGuidesCheck"
+          >
+            <input
+              type="checkbox"
+              id="showCropGuidesCheck"
+              class="mdl-checkbox__input"
+              data-target="showCropGuides"
+              onchange="handleChange(event); drawGuides(guides)"
+            />
+            <span class="mdl-checkbox__label">Show crop guides</span>
           </label>
 
           <label
@@ -2424,10 +2447,9 @@
           showCropGuides = false;
         } else {
           showCropGuides = true;
-          drawCropGuides();
         }
+        drawGuides(guides);
       }
-
 
       function hideMenu() {
         document.getElementById("context-menu").style.display = "none";
