@@ -64,6 +64,12 @@
       var previousReference = false;
       var lockGuides = false;
 
+      var showCropGuides = false;
+      var cropguidecolor = "lightgray";
+      var cropguidemargin = 60;
+      var cropratiowidth = 340;
+      var cropratioheigth = 270;
+
       var targetfolder,
         sourcefolder,
         extension,
@@ -350,6 +356,8 @@
           drawGuides(config.settings.guides);
         }
 
+        if (showCropGuides) { drawCropGuides() };
+
         if (autocopy) {
           console.log("autocopy on");
           $(".copy-file").addClass("hide-menu-item");
@@ -536,6 +544,7 @@
                 context.closePath();
               }
             }
+            if (showCropGuides) { drawCropGuides() };
           }
         });
       });
@@ -559,6 +568,49 @@
           context.stroke();
           context.closePath();
         });
+        if (showCropGuides) { drawCropGuides() };
+      }
+
+      function drawCropGuides() {
+        var canvas = document.getElementById("guides");
+        var context = canvas.getContext("2d");
+        // context.clearRect(0, 0, canvas.width, canvas.height);
+
+        var cropWidth = canvas.width - cropguidemargin * 2;
+        var cropHeight =
+          (canvas.height - cropguidemargin * 2) *
+          (cropratioheigth / cropratiowidth);
+        
+        context.beginPath();
+        context.rect(
+          cropguidemargin,
+          (canvas.height - cropHeight) / 2,
+          cropWidth,
+          cropHeight
+        );
+        context.lineWidth = 1;
+        context.strokeStyle = cropguidecolor;
+        context.stroke();
+
+        cropWidth = canvas.width;
+        cropHeight =
+          (canvas.height) *
+          (cropratioheigth / cropratiowidth);
+
+        context.beginPath();  
+        context.rect(
+          1,
+          (canvas.height - cropHeight) / 2,
+          cropWidth-2,
+          cropHeight
+        );
+        context.setLineDash([5, 5]);
+        context.lineWidth = 1;
+        context.strokeStyle = cropguidecolor;
+        context.stroke();
+        context.setLineDash([]);
+
+
       }
 
       // https://riptutorial.com/html5-canvas/example/9061/image-cropping-using-canvas
@@ -1172,6 +1224,9 @@
       <div class="item" onclick="toggleMirror();">
         <span class="material-icons">tag</span> Mirror Crosshairs
       </div>
+      <div class="item" onclick="toggleCropGuides();">
+        <span class="material-icons">crop</span> Crop Guides on/off
+      </div>      
       <div class="item" onclick="toggleZoom();">
         <span id="zoom_toggle" class="material-icons">zoom_in</span> Zoom View
         on/off
@@ -2363,6 +2418,16 @@
           showFileinfo = true;
         }
       }
+
+      function toggleCropGuides() {
+        if (showCropGuides) {
+          showCropGuides = false;
+        } else {
+          showCropGuides = true;
+          drawCropGuides();
+        }
+      }
+
 
       function hideMenu() {
         document.getElementById("context-menu").style.display = "none";
