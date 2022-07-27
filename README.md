@@ -1,6 +1,6 @@
 # Simple Photo Sync
 
-Also known as poor man's tether, a basic camera to PC photo sync application implemented as a small Node-based webserver.
+Also known as poor man's tether, a basic camera to PC photo sync application implemented as a small Node-based webserver. Note that this is not a "live view" app!
 
 ## Problem
 
