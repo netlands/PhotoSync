@@ -1538,6 +1538,15 @@
             }
           }
 
+          var cropguides  = {
+            show: showCropGuides,
+            color: cropguidecolor,
+            margin: cropguidemargin,
+            width: cropratiowidth,
+            height: cropratioheigth
+          };
+          config.settings.cropguides = Object.assign({}, cropguides);
+
           closeSettings();
           if (save) {
             socket.emit("updateconfig", config);
@@ -2293,6 +2302,14 @@
         previousReference = config.settings.previousreference;
         if (config.settings.hasOwnProperty("guides")) {
           drawGuides(config.settings.guides);
+        }
+
+        if (config.settings.hasOwnProperty("cropguides")) {
+          showCropGuides = config.settings.cropguides.show;
+          cropguidecolor = config.settings.cropguides.color;
+          cropguidemargin = config.settings.cropguides.margin;
+          cropratiowidth = config.settings.cropguides.width;
+          cropratioheigth = config.settings.cropguides.height;
         }
       }
 
