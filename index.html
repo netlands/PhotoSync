@@ -652,14 +652,14 @@
           $("body").removeClass("light");
           $(".hair").addClass("light");
           $("#image").removeClass("dark");
-          cropguidecolor = "lightgray"
+          cropguidecolor = "lightgray";
         } else {
           console.log("light");
           $("body").addClass("light");
           $("body").removeClass("dark");
           $(".hair").removeClass("light");
           $("#image").addClass("dark");
-          cropguidecolor = "darkgray"
+          cropguidecolor = "darkgray";
         }
       }
 
@@ -1546,12 +1546,12 @@
             }
           }
 
-          var cropguides  = {
+          var cropguides = {
             show: showCropGuides,
             color: cropguidecolor,
             margin: cropguidemargin,
             width: cropratiowidth,
-            height: cropratioheigth
+            height: cropratioheigth,
           };
           config.settings.cropguides = Object.assign({}, cropguides);
 
@@ -1624,7 +1624,7 @@
             document
               .getElementById("showCropGuidesCheck")
               .parentElement.classList.add("is-checked");
-          }          
+          }
           if (quicksort) {
             document
               .getElementById("showQuicksortCheck")
