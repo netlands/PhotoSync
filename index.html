@@ -356,6 +356,14 @@
           drawGuides(config.settings.guides);
         }
 
+        if (config.settings.hasOwnProperty("cropguides")) {
+          showCropGuides = config.settings.cropguides.show;
+          cropguidecolor = config.settings.cropguides.color;
+          cropguidemargin = config.settings.cropguides.margin;
+          cropratiowidth = config.settings.cropguides.width;
+          cropratioheigth = config.settings.cropguides.height;
+        }
+
         if (showCropGuides) {
           drawCropGuides();
         }
