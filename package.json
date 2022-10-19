@@ -18,8 +18,9 @@
     "build": "electron-packager . --overwrite --asar  --out=./dist/ --ignore=.gitignore --ignore=.+.lnk --ignore=.+.code-workspace --ignore=.+.bat --ignore=.gitattributes --ignore=^/art --ignore=^/test --icon='./SimplePhotoSync.ico'"
   },
   "devDependencies": {
+    "@xmldom/xmldom": ">=0.7.6",
     "electron": "^19.0.0",
-    "electron-packager": "^15.5.1",
+    "electron-packager": "^16.0.0",
     "got": ">=11.8.5"
   }
 }
