@@ -1,9 +1,11 @@
 {
   "dependencies": {
+    "@xmldom/xmldom": ">=0.7.7",
     "chokidar": "^3.5.3",
     "exifreader": "^4.5.0",
     "express": "^4.18.1",
     "express-favicon": "^2.0.1",
+    "minimatch": ">=3.0.5",
     "socket.io": "^4.5.0"
   },
   "name": "photosync",
@@ -18,9 +20,10 @@
     "build": "electron-packager . --overwrite --asar  --out=./dist/ --ignore=.gitignore --ignore=.+.lnk --ignore=.+.code-workspace --ignore=.+.bat --ignore=.gitattributes --ignore=^/art --ignore=^/test --icon='./SimplePhotoSync.ico'"
   },
   "devDependencies": {
-    "@xmldom/xmldom": "~> 0.8.4",
-    "electron": "^19.0.0",
-    "electron-packager": "^16.0.0",
-    "got": ">=11.8.5"
+    "@xmldom/xmldom": ">=0.7.7",
+    "electron": "^6.1.12",
+    "electron-packager": "^15.4.0",
+    "got": ">=11.8.5",
+    "minimatch": ">=3.0.5"
   }
 }
