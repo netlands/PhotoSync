@@ -13,7 +13,8 @@ function createWindow() {
     resizable: true,
     icon: __dirname + "/camera.ico",
     webPreferences: {
-      preload: path.join(__dirname, "app.js"),
+      sandbox: false, //https://www.electronjs.org/blog/electron-20-0
+      preload: path.join(__dirname, "app.js")
     },
   });
   // mainWindow.loadURL('http://localhost:3000');
