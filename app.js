@@ -38,6 +38,7 @@ let extension = config.extension;
 let autoCopy = config.settings.autocopy;
 
 let remoteAddress = "127.0.0.1";
+let serverPort = 3000;
 
 let exepath = __dirname.toString();
 console.log(exepath);
@@ -141,7 +142,7 @@ app.get("/test/", (req, res) => {
   res.sendFile(__dirname + "/test/test.html");
 });
 
-let serverPort = 3000;
+
 
 server.listen(serverPort, () => {
   remoteAddress = getServerIp();
