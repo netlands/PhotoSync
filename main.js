@@ -14,7 +14,7 @@ function createWindow() {
     icon: __dirname + "/camera.ico",
     webPreferences: {
       sandbox: false, //https://www.electronjs.org/blog/electron-20-0
-      preload: path.join(__dirname, "app.js")
+      preload: path.join(__dirname, "app.js"),
     },
   });
   // mainWindow.loadURL('http://localhost:3000');

@@ -142,8 +142,6 @@ app.get("/test/", (req, res) => {
   res.sendFile(__dirname + "/test/test.html");
 });
 
-
-
 server.listen(serverPort, () => {
   remoteAddress = getServerIp();
   console.log(
