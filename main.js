@@ -1,6 +1,8 @@
 const { app, BrowserWindow, Menu } = require("electron");
 const path = require("path");
 
+app.disableHardwareAcceleration(); // for integrated Intel GPU
+
 Menu.setApplicationMenu(false);
 
 function createWindow() {
@@ -13,13 +15,16 @@ function createWindow() {
     resizable: true,
     icon: __dirname + "/camera.ico",
     webPreferences: {
+      contextIsolation: false,
+      nodeIntegration: true,
+      nodeIntegrationInWorker: true,      
       sandbox: false, //https://www.electronjs.org/blog/electron-20-0
       preload: path.join(__dirname, "app.js"),
     },
   });
   // mainWindow.loadURL('http://localhost:3000');
   mainWindow.loadFile(path.join(__dirname, "start.html"));
-  //mainWindow.openDevTools();
+  mainWindow.openDevTools();
 }
 
 let myWindow = null;

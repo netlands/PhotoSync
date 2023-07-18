@@ -126,7 +126,7 @@ app.use(favicon(__dirname + "/SimplePhotoSync.ico"));
 app.use(function (req, res, next) {
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; connect-src localhost; script-src 'self' 'unsafe-inline' http://localhost:" +
+    "default-src 'self'; connect-src localhost http://localhost:" + serverPort + "; script-src 'self' 'unsafe-inline' http://localhost:" +
       serverPort +
       " https://ajax.googleapis.com https://code.getmdl.io https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdnjs.com https://code.jquery.com; font-src 'self' fonts.googleapis.com fonts.gstatic.com; style-src * 'self' 'unsafe-inline'; img-src 'self' 'unsafe-inline' data:;"
   );
