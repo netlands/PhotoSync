@@ -47,7 +47,7 @@
     }
   </style>
 
-  <body>
+  <body onload="splash(3000);">
     <div id=" splash">
       <img
         id="photo"
@@ -227,6 +227,7 @@
       });
       //<body onload="splash(3000);">
       window.addEventListener("DOMContentLoaded", (event) => {
+        console.log("DOM loaded");
         const status = document.getElementById("status");
         topbar.show();
         (function step() {
@@ -253,6 +254,12 @@
           }, 50); // 100
         })();
       });
+
+      window.addEventListener("load", (event) => {
+        console.log("Page loaded");
+      });
+
+
     </script>
   </body>
 </html>
