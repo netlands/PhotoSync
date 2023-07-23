@@ -30,8 +30,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
     <!-- get main color: https://lokeshdhakar.com/projects/color-thief -->
     <!-- z-index of ::after https://stackoverflow.com/questions/3032856/is-it-possible-to-set-the-stacking-order-of-pseudo-elements-below-their-parent-e/9072467#9072467-->
-    <!-- progressbar: http://buunguyen.github.io/topbar/-->
-    <!-- script src="./topbar.js"></script-->
     <!-- https://mionskowski.pl/posts/positioning-a-context-menu-using-pure-css/ -->
     <!-- -->
     <script>
@@ -133,7 +131,7 @@
 
       socket.on("ping", function () {
         console.log("receiving data...");
-        topbar.show();
+        showProgressBar(true);
         newphotoSnd();
       });
 
@@ -157,7 +155,7 @@
         $(".copy-file").removeClass("hide-menu-item");
         $(".filename").removeClass("hide-menu-item");
         $("#triage").removeClass("done");
-        topbar.hide();
+        hideProgressBar();
       });
       socket.on("new data", function (msg) {
         // console.log(msg);
@@ -486,6 +484,7 @@
 
       window.addEventListener("load", function () {
         console.log("Page content loaded");
+
         if (showgrid) {
           $("#image").addClass("grid");
         }
@@ -1196,9 +1195,32 @@
         background-color: #ccc;
       }
     </style>
+
+		<style>
+			#myProgress {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+        height: 5px;
+        background-color: transparent;
+				z-index: 999999;
+				display: none;
+			}
+
+			#myBar {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				width: 1%;
+				height: 100%;
+				background-color: #aaff00;
+			}
+		</style>
+
   </head>
 
-  <body>
+  <body>  
     <div id="context-menu">
       <div class="item" title="Open Settings" onclick="showSettings();">
         <span class="material-icons">settings</span> Settings
@@ -1324,7 +1346,12 @@
       ondrop="dropHandler(event);"
       ondragover="dragOverHandler(event);"
     >
-      <canvas id="guides"></canvas>
+
+    <div id="myProgress">
+      <div id="myBar"></div>
+    </div>
+
+    <canvas id="guides"></canvas>
       <div id="triage" class="hide">
         <div
           id="keep"
@@ -2519,171 +2546,7 @@
           e.preventDefault();
         }
       });
-    </script>
-    <script>
-      /**
-       * @license MIT
-       * topbar 1.0.0, 2021-01-06
-       * http://buunguyen.github.io/topbar
-       * Copyright (c) 2021 Buu Nguyen
-       */
-      (function (window, document) {
-        "use strict";
-        !(function () {
-          for (
-            var lastTime = 0, vendors = ["ms", "moz", "webkit", "o"], x = 0;
-            x < vendors.length && !window.requestAnimationFrame;
-            ++x
-          )
-            (window.requestAnimationFrame =
-              window[vendors[x] + "RequestAnimationFrame"]),
-              (window.cancelAnimationFrame =
-                window[vendors[x] + "CancelAnimationFrame"] ||
-                window[vendors[x] + "CancelRequestAnimationFrame"]);
-          window.requestAnimationFrame ||
-            (window.requestAnimationFrame = function (callback, element) {
-              var currTime = new Date().getTime(),
-                timeToCall = Math.max(0, 16 - (currTime - lastTime)),
-                id = window.setTimeout(function () {
-                  callback(currTime + timeToCall);
-                }, timeToCall);
-              return (lastTime = currTime + timeToCall), id;
-            }),
-            window.cancelAnimationFrame ||
-              (window.cancelAnimationFrame = function (id) {
-                clearTimeout(id);
-              });
-        })();
 
-        function repaint() {
-          (canvas.width = window.innerWidth),
-            (canvas.height = 5 * options.barThickness);
-          var ctx = canvas.getContext("2d");
-          (ctx.shadowBlur = options.shadowBlur),
-            (ctx.shadowColor = options.shadowColor);
-          var stop,
-            lineGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-          for (stop in options.barColors)
-            lineGradient.addColorStop(stop, options.barColors[stop]);
-          (ctx.lineWidth = options.barThickness),
-            ctx.beginPath(),
-            ctx.moveTo(0, options.barThickness / 2),
-            ctx.lineTo(
-              Math.ceil(currentProgress * canvas.width),
-              options.barThickness / 2
-            ),
-            (ctx.strokeStyle = lineGradient),
-            ctx.stroke();
-        }
-        var canvas,
-          progressTimerId,
-          fadeTimerId,
-          currentProgress,
-          showing,
-          options = {
-            autoRun: !0,
-            barThickness: 3,
-            barColors: {
-              0: "rgba(26,  188, 156, .9)",
-              ".25": "rgba(52,  152, 219, .9)",
-              ".50": "rgba(241, 196, 15,  .9)",
-              ".75": "rgba(230, 126, 34,  .9)",
-              "1.0": "rgba(211, 84,  0,   .9)",
-            },
-            shadowBlur: 10,
-            shadowColor: "rgba(0,   0,   0,   .6)",
-            className: null,
-          },
-          topbar = {
-            config: function (opts) {
-              for (var key in opts)
-                options.hasOwnProperty(key) && (options[key] = opts[key]);
-            },
-            show: function () {
-              var type, handler, elem;
-              showing ||
-                ((showing = !0),
-                null !== fadeTimerId &&
-                  window.cancelAnimationFrame(fadeTimerId),
-                canvas ||
-                  (((elem = (canvas = document.createElement("canvas"))
-                    .style).position = "fixed"),
-                  (elem.top =
-                    elem.left =
-                    elem.right =
-                    elem.margin =
-                    elem.padding =
-                      0),
-                  (elem.zIndex = 100001),
-                  (elem.display = "none"),
-                  options.className && canvas.classList.add(options.className),
-                  document.body.appendChild(canvas),
-                  (type = "resize"),
-                  (handler = repaint),
-                  (elem = window).addEventListener
-                    ? elem.addEventListener(type, handler, !1)
-                    : elem.attachEvent
-                    ? elem.attachEvent("on" + type, handler)
-                    : (elem["on" + type] = handler)),
-                (canvas.style.opacity = 1),
-                (canvas.style.display = "block"),
-                topbar.progress(0),
-                options.autoRun &&
-                  (function loop() {
-                    (progressTimerId = window.requestAnimationFrame(loop)),
-                      topbar.progress(
-                        "+" + 0.05 * Math.pow(1 - Math.sqrt(currentProgress), 2)
-                      );
-                  })());
-            },
-            progress: function (to) {
-              return (
-                void 0 === to ||
-                  ("string" == typeof to &&
-                    (to =
-                      (0 <= to.indexOf("+") || 0 <= to.indexOf("-")
-                        ? currentProgress
-                        : 0) + parseFloat(to)),
-                  (currentProgress = 1 < to ? 1 : to),
-                  repaint()),
-                currentProgress
-              );
-            },
-            hide: function () {
-              showing &&
-                ((showing = !1),
-                null != progressTimerId &&
-                  (window.cancelAnimationFrame(progressTimerId),
-                  (progressTimerId = null)),
-                (function loop() {
-                  return 1 <= topbar.progress("+.1") &&
-                    ((canvas.style.opacity -= 0.05),
-                    canvas.style.opacity <= 0.05)
-                    ? ((canvas.style.display = "none"),
-                      void (fadeTimerId = null))
-                    : void (fadeTimerId = window.requestAnimationFrame(loop));
-                })());
-            },
-          };
-        "object" == typeof module && "object" == typeof module.exports
-          ? (module.exports = topbar)
-          : "function" == typeof define && define.amd
-          ? define(function () {
-              return topbar;
-            })
-          : (this.topbar = topbar);
-      }.call(this, window, document));
-
-      topbar.config({
-        autoRun: true,
-        barThickness: 4,
-        barColors: {
-          0: "white",
-          "1.0": "white",
-        },
-      });
-    </script>
-    <script>
       function connectSnd() {
         if (playAudio) {
           Promise.resolve()
@@ -2854,5 +2717,138 @@
         return pub;
       })();
     </script>
+		<script>
+
+
+
+var progressbar = new progressBar("myProgress");
+
+
+			function showProgressBar(start = true) {
+				var divToShow = document.getElementById("myProgress");
+				divToShow.style.display = "block";
+				if (start) { progressbar.start(true,1) };
+			}
+
+			function hideProgressBar() {
+				var divToHide = document.getElementById("myProgress");
+				divToHide.style.display = "none"; 
+			}
+
+			function progressBar(id) {
+				this.state = 0; // 0 stopped, 1 running
+				this.id = id;
+				this.elem = document.getElementById(id).firstElementChild;
+				this.elem.style.width = "0%";
+
+				this.start = function (reset = false, speed = 100) {
+					if (reset) { this.reset() }
+					this.state = 1;
+					var _width = 1;
+					if (this.elem.style.width.length > 1) {
+						_width = parseInt(
+							this.elem.style.width.substring(
+								0,
+								this.elem.style.width.length - 1
+							)
+						);
+					} else {
+						_width = 1;
+					}
+					this._id = setInterval(this.frame, speed, this);
+				};
+
+				this._id = 0;
+
+				this.progress = function () {
+					var _width = 1;
+					if (this.elem.style.width.length > 1) {
+						_width = parseInt(
+							this.elem.style.width.substring(
+								0,
+								this.elem.style.width.length - 1
+							)
+						);
+					} else {
+						_width = 1;
+					}
+					return _width;
+				}
+
+				this.frame = function (barObj) {
+					var width = 1;
+					if (barObj.elem.style.width.length > 1) {
+						width = parseInt(
+							barObj.elem.style.width.substring(
+								0,
+								barObj.elem.style.width.length - 1
+							)
+						);
+					} else {
+						width = 1;
+					}
+
+					switch(width) {
+						case 0 :
+							//console.log("0");
+							break;
+						case 25:
+							//console.log("25");
+							break;
+						case 50:
+							//console.log("50");
+							break;
+						case 75:
+							//console.log("75");
+							break;
+						case 100 :
+							//console.log("100");
+							break;
+					};
+
+					if (width >= 100 || barObj.state == 0) {
+						barObj.state = 0;
+						barObj.stop();
+					} else {
+						width++;
+						barObj.elem.style.width = width + "%";
+					}
+
+				};
+
+				this.setColor = function () {
+					this.elem.style.backgroundColor = "red";
+				};
+
+				this.stop = function () {
+					clearInterval(this._id);
+					this.state = 0;
+				};
+				
+				this.reset = function () {
+					this.elem.style.width = "0%";
+				};
+
+				this.full = function () {
+					this.elem.style.width = "100%";
+					this.state = 0;
+				};
+
+				this.step = function (stepSize) {
+					width = parseInt(
+						this.elem.style.width.substring(
+							0,
+							this.elem.style.width.length - 1
+						)
+					);
+					if (width < 100) {
+						width = width + stepSize;
+						this.elem.style.width = width + "%";
+					}
+				};
+			}
+
+
+		</script>
   </body>
 </html>
