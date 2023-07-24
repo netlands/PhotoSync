@@ -242,7 +242,7 @@
         $("#keep").show();
         $("#review").show();
 
-        checkColors();
+        checkColors(); 
       });
 
       function deleteFromTarget() {
@@ -642,7 +642,12 @@
           width: 100,
           height: 100,
         });
-        var mainColor = colorThief.getColor(img);
+        var mainColor;
+        try {
+          mainColor = colorThief.getColor(img);
+        } catch { 
+          mainColor = [0,0,0]; // default 
+        }
         if (
           lightOrDark(rgbToHex(mainColor[0], mainColor[1], mainColor[2])) ==
           "dark"
